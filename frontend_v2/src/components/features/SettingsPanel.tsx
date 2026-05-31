@@ -54,7 +54,7 @@ export function SettingsPanel() {
 
             {/* Dropdown panel */}
             {open && (
-                <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-2xl border border-[var(--border-subtle)] bg-[rgba(18,18,22,0.94)] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-xl animate-fade-in">
+                <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-popover)] p-4 shadow-[var(--shadow-card)] backdrop-blur-xl animate-fade-in">
                     {/* Section: Thumbnail size */}
                     <div className="mb-4">
                         <div className="text-xs text-[var(--text-muted)] mb-2 font-medium">缩略图大小</div>
@@ -89,20 +89,10 @@ export function SettingsPanel() {
                             </div>
                             <button
                                 onClick={() => setDeleteLocalFile(!deleteLocalFile)}
-                                className={`relative h-6 w-11 rounded-full border transition-colors ${
-                                    deleteLocalFile
-                                        ? 'border-[var(--accent-primary)]/45 bg-[var(--accent-primary)]/20 shadow-[0_0_14px_rgba(244,63,94,0.12)]'
-                                        : 'border-[var(--border-subtle)] bg-[var(--bg-secondary)]'
-                                }`}
+                                className={`pc-switch ${deleteLocalFile ? 'pc-switch--checked' : ''}`}
                                 aria-pressed={deleteLocalFile}
                             >
-                                <span
-                                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-all ${
-                                        deleteLocalFile
-                                            ? 'translate-x-5 bg-[var(--accent-primary)]'
-                                            : 'translate-x-0 bg-[var(--text-muted)]'
-                                    }`}
-                                />
+                                <span className="pc-switch__thumb" />
                             </button>
                         </div>
 
@@ -115,20 +105,10 @@ export function SettingsPanel() {
                             </div>
                             <button
                                 onClick={() => setDeleteImportedOriginal(!deleteImportedOriginal)}
-                                className={`relative h-6 w-11 rounded-full border transition-colors ${
-                                    deleteImportedOriginal
-                                        ? 'border-[var(--accent-primary)]/45 bg-[var(--accent-primary)]/20 shadow-[0_0_14px_rgba(244,63,94,0.12)]'
-                                        : 'border-[var(--border-subtle)] bg-[var(--bg-secondary)]'
-                                }`}
+                                className={`pc-switch ${deleteImportedOriginal ? 'pc-switch--checked' : ''}`}
                                 aria-pressed={deleteImportedOriginal}
                             >
-                                <span
-                                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-all ${
-                                        deleteImportedOriginal
-                                            ? 'translate-x-5 bg-[var(--accent-primary)]'
-                                            : 'translate-x-0 bg-[var(--text-muted)]'
-                                    }`}
-                                />
+                                <span className="pc-switch__thumb" />
                             </button>
                         </div>
                     </div>

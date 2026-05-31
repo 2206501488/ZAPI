@@ -190,6 +190,7 @@ def get_task(task_id: str) -> dict[str, Any]:
         status = task.status.lower()
         response: dict[str, Any] = {
             "status": status,
+            "meta": _task_status_meta(task.raw),
             "data": {
                 "status": status,
                 "task_id": task.task_id,
@@ -226,7 +227,9 @@ def get_task(task_id: str) -> dict[str, Any]:
 
 
 def refresh_account_records() -> list[dict[str, Any]]:
-    client = create_sousaku_client()
+    config_payload = json.loads(Path(config.SOUSAKU_CONFIG_PATH).read_text(encoding="utf-8-sig"))
+    tokens = SousakuClient._normalize_tokens(config_payload.get("tokens") or config_payload.get("token"))
+    client = create_sousaku_client(tokens=tokens)
     with _ACCOUNTS_FILE_LOCK:
         return client.save_account_records(include_token=True, include_raw=False)
 
@@ -489,6 +492,39 @@ def _task_error_message(task: dict[str, Any]) -> str:
     message = task.get("error_message")
     if message:
         return str(message)
+
+    failed_items = []
+    for item in task.get("content") or []:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status") or "").lower()
+        if status not in {"failed", "failure", "error", "canceled", "cancelled", "rejected"} and not item.get("is_nsfw_error"):
+            continue
+        item_message = item.get("error_message")
+        if item.get("is_nsfw_error"):
+            item_message = item_message or "content rejected by model compliance check"
+        if item_message:
+            failed_items.append(str(item_message))
+
+    if failed_items:
+        return "; ".join(dict.fromkeys(failed_items))
     if task.get("is_nsfw_error"):
         return "content rejected by model compliance check"
     return "Sousaku task failed"
+
+
+def _task_status_meta(task: dict[str, Any]) -> dict[str, Any]:
+    content = [item for item in (task.get("content") or []) if isinstance(item, dict)]
+    statuses = [str(item.get("status") or "unknown").lower() for item in content]
+    failed_count = sum(1 for status in statuses if status in {"failed", "failure", "error", "canceled", "cancelled", "rejected"})
+    nsfw_count = sum(1 for item in content if item.get("is_nsfw_error"))
+    return {
+        "raw_status": str(task.get("status") or "unknown").lower(),
+        "raw_progress": task.get("progress"),
+        "content_count": len(content),
+        "content_statuses": statuses,
+        "content_failed_count": failed_count,
+        "content_nsfw_count": nsfw_count,
+        "has_error_message": bool(task.get("error_message")),
+        "is_nsfw_error": bool(task.get("is_nsfw_error")),
+    }

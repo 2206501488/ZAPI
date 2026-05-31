@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { BackendCapabilities, GenerateRequest, GenerateResponse, ImageItem, ReferenceImageInput, TaskStatusResponse } from '../types';
+import type { AppThemeId } from '../theme/appThemes';
 
 const api = axios.create({
     baseURL: '/api',
@@ -259,6 +260,7 @@ export interface SettingValue<T> {
 
 export interface BackendSettings {
     ui: {
+        theme?: SettingValue<AppThemeId>;
         prompt: {
             autoClear: SettingValue<boolean>;
         };
@@ -401,6 +403,7 @@ export interface AppSettingsPatch {
         saveDir?: string;
     };
     ui?: {
+        theme?: AppThemeId;
         prompt?: {
             autoClear?: boolean;
         };

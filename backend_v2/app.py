@@ -44,6 +44,7 @@ QUIET_ACCESS_PATHS = (
     "/api/gallery",
     "/api/storage/usage",
     "/api/sousaku-task/",
+    "/api/reference-images",
 )
 QUIET_ACCESS_METHODS = {"GET", "OPTIONS"}
 QUIET_ACCESS_STATUS = {200, 204, 304}
@@ -66,6 +67,8 @@ class QuietAccessLogs(logging.Filter):
         path = urlsplit(match.group(2)).path
         status_match = re.search(r'"\s+(\d{3})\s+', message)
         status = int(status_match.group(1)) if status_match else None
+        if path.startswith("/api/serve-image"):
+            return False
         if (method, path, status) in QUIET_ACCESS_METHOD_STATUS:
             return False
         if method in QUIET_ACCESS_METHODS and status in QUIET_ACCESS_STATUS and _is_quiet_access_path(path):
@@ -81,6 +84,8 @@ def _quiet_log_request(self, code="-", size="-"):
         method, target, *_ = self.requestline.split()
         status = int(code)
         path = urlsplit(target).path
+        if path.startswith("/api/serve-image"):
+            return
         if (method, path, status) in QUIET_ACCESS_METHOD_STATUS:
             return
         if method in QUIET_ACCESS_METHODS and status in QUIET_ACCESS_STATUS and _is_quiet_access_path(path):
@@ -1925,6 +1930,18 @@ def get_job(job_id):
     job = _JOB_STORE.get_job(job_id)
     if not job:
         return jsonify({"success": False, "error": {"message": "job not found"}}), 404
+    
+    # 动态检查生成文件在磁盘上的真实存在性
+    if job.get("result"):
+        from services.image_files import resolve_allowed_path
+        for img in job["result"]:
+            saved_path = img.get("saved_path")
+            if saved_path:
+                resolved = resolve_allowed_path(saved_path)
+                img["file_exists"] = bool(resolved and resolved.exists())
+            else:
+                img["file_exists"] = False
+                
     return jsonify({"success": True, "data": job})
 
 
@@ -2734,6 +2751,7 @@ def configure_job_provider_adapters():
     config.apply_runtime_config()
     _JOB_WORKER.adapters = provider_registry.build_job_adapters(
         app=app,
+        logger=log_event,
         endpoints={
             "cliproxy": generate_image_cliproxy,
             "nanobanana2": generate_image_nanobanana2,

@@ -39,6 +39,15 @@ def get_gallery():
 def add_to_gallery():
     try:
         image = request.get_json(silent=True) or {}
+        
+        # 校验本地文件是否存在
+        saved_file_path = image.get("savedFilePath")
+        if saved_file_path:
+            from services.image_files import resolve_allowed_path
+            resolved = resolve_allowed_path(saved_file_path)
+            if not resolved or not resolved.exists():
+                return jsonify({"success": False, "message": "File not found on disk"}), 404
+
         inserted = gallery_store.upsert_image(image)
         current_app_log("加入画廊" if inserted else "更新图片", image.get("id", "unknown"))
         return jsonify({"success": True})

@@ -58,6 +58,8 @@ const FALLBACK_APIMART_MODELS: ModelOption[] = [
     { value: 'gpt-image-2-official', label: 'GPT-Image-2 Official' },
 ];
 
+const composerControlClass = 'rounded-[var(--radius-control)] border border-[var(--border-subtle)] bg-[var(--option-bg)] px-2 py-1 text-xs text-[var(--text-primary)] outline-none transition-colors hover:bg-[var(--option-bg-hover)] focus:border-[var(--accent-primary)]';
+
 function providerModelOptions(providers: RuntimeProvider[], providerId: string, fallback: ModelOption[]): ModelOption[] {
     const configured = providers.find((provider) => provider.id === providerId)?.models || [];
     const usable = configured
@@ -526,7 +528,7 @@ export function BottomPanel() {
                     <select
                         value={controlValue ? 'true' : 'false'}
                         onChange={(e) => handleControlChange(control, e.target.value)}
-                        className="px-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                        className={composerControlClass}
                     >
                         <option value="true">开启</option>
                         <option value="false">关闭</option>
@@ -545,7 +547,7 @@ export function BottomPanel() {
                         step={control.step || 1}
                         value={String(controlValue)}
                         onChange={(e) => handleControlChange(control, e.target.value)}
-                        className="w-20 px-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                        className={`${composerControlClass} w-20`}
                     />
                 </label>
             );
@@ -560,7 +562,7 @@ export function BottomPanel() {
                         const sample = options.find((option) => String(optionValue(option)) === e.target.value);
                         handleControlChange(control, e.target.value, sample);
                     }}
-                    className="px-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                    className={composerControlClass}
                 >
                     {options.map((option) => {
                         const value = String(optionValue(option));
@@ -587,7 +589,7 @@ export function BottomPanel() {
                     <select
                         value={selectedModelValue}
                         onChange={(e) => handleModelChange(e.target.value)}
-                        className="px-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                        className={composerControlClass}
                     >
                         {modelOptionsForSelectedApi.map((model) => (
                             <option key={model.value} value={model.value}>{model.label || model.value}</option>
@@ -614,7 +616,7 @@ export function BottomPanel() {
     return (
         <>
             {/* Floating centered input panel */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4">
+            <div className="fixed bottom-6 left-1/2 z-40 w-full max-w-2xl -translate-x-1/2 px-4">
                 {/* Error message */}
                 <AnimatePresence>
                     {error && (
@@ -639,7 +641,7 @@ export function BottomPanel() {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="mb-2 p-3 rounded-xl glass shadow-lg"
+                            className="floating-composer mb-2 rounded-xl p-3"
                         >
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* API Selector */}
@@ -650,7 +652,7 @@ export function BottomPanel() {
                                         onChange={(e) => {
                                             setSelectedApi(e.target.value);
                                         }}
-                                        className="px-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                                        className={composerControlClass}
                                     >
                                         {apiOptions.map((option) => (
                                             <option key={option.value} value={option.value}>
@@ -667,13 +669,13 @@ export function BottomPanel() {
                 </AnimatePresence>
 
                 {/* Main input bar */}
-                <div className="flex items-center gap-2 p-2 rounded-2xl glass shadow-2xl border border-[var(--border-subtle)]">
+                <div className="floating-composer flex items-center gap-2 rounded-2xl p-2">
                     {/* Image picker button */}
                     <button
                         onClick={() => setShowImagePicker(true)}
                         className={`relative p-2.5 rounded-xl transition-colors ${selectedCount > 0
-                            ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'
+                            ? 'bg-[var(--composer-tool-bg-active)] text-[var(--composer-tool-icon-active)]'
+                            : 'bg-[var(--composer-tool-bg)] text-[var(--composer-tool-icon)] hover:bg-[var(--composer-tool-bg-hover)] hover:text-[var(--composer-tool-icon-hover)]'
                             }`}
                         title="选择参考图"
                     >
@@ -689,8 +691,8 @@ export function BottomPanel() {
                     <button
                         onClick={() => setShowSettings(!showSettings)}
                         className={`p-2.5 rounded-xl transition-colors ${showSettings
-                            ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'
+                            ? 'bg-[var(--composer-tool-bg-active)] text-[var(--composer-tool-icon-active)]'
+                            : 'bg-[var(--composer-tool-bg)] text-[var(--composer-tool-icon)] hover:bg-[var(--composer-tool-bg-hover)] hover:text-[var(--composer-tool-icon-hover)]'
                             }`}
                         title="设置"
                     >
@@ -732,9 +734,9 @@ export function BottomPanel() {
                         onClick={handleGenerate}
                         disabled={!currentPrompt.trim()}
                         className={`p-2.5 rounded-xl transition-all ${currentPrompt.trim()
-                            ? 'bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] hover-glow'
+                            ? 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-secondary)] hover-glow'
                             : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed'
-                            } text-white`}
+                            }`}
                     >
                         <Send className="w-5 h-5" />
                     </button>

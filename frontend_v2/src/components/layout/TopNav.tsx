@@ -132,7 +132,7 @@ function DatePickerDropdown({
     const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
 
     return (
-        <div className="absolute left-1/2 top-full mt-2 min-w-[210px] max-h-[26rem] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[rgba(18,18,22,0.94)] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-xl animate-fade-in">
+        <div className="absolute left-1/2 top-full mt-2 min-w-[210px] max-h-[26rem] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-popover)] p-2 shadow-[var(--shadow-card)] backdrop-blur-xl animate-fade-in">
             {/* Clear filter */}
             <button
                 onClick={onClear}
@@ -145,7 +145,7 @@ function DatePickerDropdown({
                     </span>
                 )}
             </button>
-            <div className="my-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="my-1 h-px bg-[var(--border-subtle)]" />
 
             {groupedDates.map((yearGroup) => {
                 const yearExpanded = expandedYears.has(yearGroup.year);
@@ -194,7 +194,7 @@ function DatePickerDropdown({
                                                 onClick={() => onSelectDate(dayEntry.dateStr)}
                                                 className={`flex w-full items-center gap-1.5 rounded-xl py-1.5 pl-14 pr-3 text-sm transition-all ${isSelected
                                                     ? 'bg-[var(--accent-primary)]/16 text-[var(--accent-primary)] shadow-[inset_0_0_0_1px_rgba(244,63,94,0.22)]'
-                                                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:text-white'
+                                                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'
                                                     }`}
                                             >
                                                 <span className="flex-1 text-left">{parseInt(dayEntry.day)}日</span>
@@ -244,8 +244,8 @@ export function TopNav() {
     }, [setSelectedDate]);
 
     return (
-        <nav className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[rgba(10,10,10,0.78)] backdrop-blur-xl">
-            <div className="mx-auto max-w-[1800px] px-4 py-3">
+        <nav className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-nav)] backdrop-blur-xl">
+            <div className="mx-auto max-w-[1800px] px-4 py-3 md:px-6">
                 <div className="flex items-center gap-3">
                     {/* Search */}
                     <div className="relative min-w-0 flex-1 md:max-w-xl">
@@ -304,7 +304,7 @@ export function TopNav() {
                         </button>
 
                         {showTagFilter && allTags.length > 0 && (
-                            <div className="absolute left-1/2 top-full mt-2 min-w-[190px] max-w-[260px] max-h-[26rem] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[rgba(18,18,22,0.94)] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-xl animate-fade-in">
+                            <div className="absolute left-1/2 top-full mt-2 min-w-[190px] max-w-[260px] max-h-[26rem] -translate-x-1/2 overflow-y-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-popover)] p-2 shadow-[var(--shadow-card)] backdrop-blur-xl animate-fade-in">
                                 <button
                                     onClick={() => {
                                         setSelectedTags([]);
@@ -319,7 +319,7 @@ export function TopNav() {
                                         </span>
                                     )}
                                 </button>
-                                <div className="my-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                <div className="my-1 h-px bg-[var(--border-subtle)]" />
                                 {allTags.map((tag) => (
                                     <button
                                         key={tag}
@@ -331,7 +331,7 @@ export function TopNav() {
                                         }}
                                         className={`mt-1 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-all ${filters.selectedTags.includes(tag)
                                             ? 'bg-[var(--accent-primary)]/16 text-[var(--accent-primary)] shadow-[inset_0_0_0_1px_rgba(244,63,94,0.22)]'
-                                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:text-white'
+                                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'
                                             }`}
                                     >
                                         <span className="truncate">{tag}</span>
@@ -348,7 +348,7 @@ export function TopNav() {
                     <button
                         onClick={toggleFavoritesOnly}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${filters.showFavoritesOnly
-                            ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
+                            ? 'bg-[var(--accent-primary)]/16 border-[var(--accent-primary)] text-[var(--accent-primary)]'
                             : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
                             }`}
                     >

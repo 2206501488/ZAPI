@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { BackendCapabilities, ImageItem, FilterState, UploadedImage, GenerateParams, ThoughtImage } from '../types';
 import { getBackendCapabilities, importReferenceImageUrl, loadBackendSettings, loadGallery, loadReferenceImages, resetBackendSettings, saveBackendSettings, saveToGallery, deleteFromGallery, deleteReferenceImage, updateGalleryTags, uploadReferenceImage } from '../services/api';
+import type { AppThemeId } from '../theme/appThemes';
+import { normalizeAppThemeId } from '../theme/appThemes';
 
 export type GalleryColumnSize = 5 | 6 | 7;
 export type ApiType = string;
@@ -22,6 +24,7 @@ function clampGalleryPageSize(value: number) {
 
 function applyUiSettings(set: (state: Partial<AppState>) => void, settings: {
     ui?: {
+        theme?: AppThemeId;
         prompt?: { autoClear?: boolean };
         gallery?: {
             columns?: number;
@@ -38,6 +41,7 @@ function applyUiSettings(set: (state: Partial<AppState>) => void, settings: {
     const prompt = settings.ui?.prompt || {};
     const gallery = settings.ui?.gallery || {};
     set({
+        appTheme: normalizeAppThemeId(settings.ui?.theme),
         autoClearPrompt: prompt.autoClear ?? false,
         galleryColumns: (gallery.columns || 5) as GalleryColumnSize,
         galleryDisplayMode: gallery.displayMode || 'waterfall',
@@ -304,6 +308,8 @@ interface AppState {
     setCurrentPrompt: (prompt: string) => void;
     autoClearPrompt: boolean;
     setAutoClearPrompt: (value: boolean) => void;
+    appTheme: AppThemeId;
+    setAppTheme: (theme: AppThemeId) => void;
 
     // Gallery modal state
     selectedImage: ImageItem | null;
@@ -364,6 +370,7 @@ export const useStore = create<AppState>()(
                             prompt: {
                                 autoClear: settings.ui.prompt.autoClear.value,
                             },
+                            theme: settings.ui.theme?.value,
                             gallery: {
                                 columns: settings.ui.gallery.columns.value,
                                 displayMode: settings.ui.gallery.displayMode.value,
@@ -1007,6 +1014,12 @@ export const useStore = create<AppState>()(
             setAutoClearPrompt: (value) => {
                 set({ autoClearPrompt: value });
                 saveBackendSettings({ ui: { prompt: { autoClear: value } } }).catch(e => console.error('Failed to save setting:', e));
+            },
+            appTheme: 'default',
+            setAppTheme: (theme) => {
+                const nextTheme = normalizeAppThemeId(theme);
+                set({ appTheme: nextTheme });
+                saveBackendSettings({ ui: { theme: nextTheme } }).catch(e => console.error('Failed to save setting:', e));
             },
 
             // Gallery modal

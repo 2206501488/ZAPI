@@ -30,6 +30,7 @@ DEFAULT_APP_SETTINGS: dict[str, Any] = {
         "saveDir": DEFAULT_SAVE_DIR,
     },
     "ui": {
+        "theme": "default",
         "prompt": {
             "autoClear": False,
         },
@@ -169,11 +170,11 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                         {"key": "ratio", "label": "比例", "type": "select", "options": ["auto", "1:1", "1:2", "1:4", "1:8", "2:1", "2:3", "3:2", "3:4", "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "9:21", "16:9", "21:9"]},
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
                     ],
-                    "features": {"referenceImage": True, "mask": True},
+                    "features": {"referenceImage": True, "mask": False},
                     "payload": {"size": "ratio", "count": "n"},
                 },
             ],
-            "capabilities": ["text-to-image", "reference-image", "mask"],
+            "capabilities": ["text-to-image", "reference-image"],
             "notes": "OpenAI-compatible local image API.",
         },
         "cliproxy": {
@@ -251,11 +252,11 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
                         {"key": "thinkingLevel", "label": "思考", "type": "select", "options": ["High", "Minimal"]},
                     ],
-                    "features": {"referenceImage": True, "mask": True, "thinking": True},
+                    "features": {"referenceImage": True, "mask": False, "thinking": True},
                     "payload": {"size": "ratio", "quality": "quality", "count": "n"},
                 },
             ],
-            "capabilities": ["text-to-image", "reference-image", "mask", "thinking"],
+            "capabilities": ["text-to-image", "reference-image", "thinking"],
         },
         "sousaku": {
             "label": "Sousaku",
@@ -452,6 +453,9 @@ def normalized_app_settings(raw: dict[str, Any] | None = None) -> dict[str, Any]
     server["useReloader"] = _bool_value(server.get("useReloader"), DEFAULT_APP_SETTINGS["server"]["useReloader"])
 
     storage["saveDir"] = str(storage.get("saveDir") or DEFAULT_APP_SETTINGS["storage"]["saveDir"])
+
+    theme = str(ui.get("theme") or DEFAULT_APP_SETTINGS["ui"]["theme"])
+    ui["theme"] = theme if theme in {"default", "paper", "muji"} else DEFAULT_APP_SETTINGS["ui"]["theme"]
 
     prompt["autoClear"] = _bool_value(prompt.get("autoClear"), DEFAULT_APP_SETTINGS["ui"]["prompt"]["autoClear"])
     ui_gallery["columns"] = _int_value(ui_gallery.get("columns"), DEFAULT_APP_SETTINGS["ui"]["gallery"]["columns"], minimum=5, maximum=7)

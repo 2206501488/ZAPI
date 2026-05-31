@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
+import { Stage, Layer, Rect, Line, Ellipse, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import {
     Paintbrush, Eraser, Square, Circle, Lasso,
@@ -150,6 +150,58 @@ const renderMaskPreviewCanvas = (maskCanvas: HTMLCanvasElement) => {
     ctx.putImageData(img, 0, 0);
     return canvas;
 };
+
+function LiveDrawingShape({ shape }: { shape: DrawnShape | null }) {
+    if (!shape) return null;
+
+    const maskFill = 'rgba(100,180,255,0.45)';
+    const maskStroke = 'rgba(100,180,255,0.75)';
+    const eraserStroke = 'rgba(255,255,255,0.72)';
+
+    if (shape.type === 'line') {
+        const isEraser = shape.tool === 'eraser';
+        return (
+            <Line
+                points={shape.points}
+                closed={shape.closed}
+                fill={shape.closed && !isEraser ? maskFill : undefined}
+                stroke={isEraser ? eraserStroke : maskStroke}
+                strokeWidth={shape.strokeWidth}
+                lineCap="round"
+                lineJoin="round"
+                listening={false}
+            />
+        );
+    }
+
+    if (shape.type === 'rect') {
+        return (
+            <Rect
+                x={shape.x}
+                y={shape.y}
+                width={shape.width}
+                height={shape.height}
+                fill={maskFill}
+                stroke={maskStroke}
+                strokeWidth={2}
+                listening={false}
+            />
+        );
+    }
+
+    return (
+        <Ellipse
+            x={shape.x}
+            y={shape.y}
+            radiusX={shape.radiusX}
+            radiusY={shape.radiusY}
+            fill={maskFill}
+            stroke={maskStroke}
+            strokeWidth={2}
+            listening={false}
+        />
+    );
+}
 
 // ── Component ──────────────────────────────────────────────────
 
@@ -348,15 +400,14 @@ export function MaskEditor({ imageSrc, existingMask, existingFeather, onConfirm,
 
     const maskPreviewCanvas = useMemo(() => {
         if (!image) return null;
-        const allShapes = drawingShape ? [...shapes, drawingShape] : shapes;
         const maskCanvas = renderMaskCanvas(
             image.naturalWidth,
             image.naturalHeight,
             existingMaskImg,
-            allShapes,
+            shapes,
         );
         return renderMaskPreviewCanvas(maskCanvas);
-    }, [image, existingMaskImg, shapes, drawingShape]);
+    }, [image, existingMaskImg, shapes]);
 
     // ── Cursor ──
     const cursor = useMemo(() => {
@@ -529,6 +580,7 @@ export function MaskEditor({ imageSrc, existingMask, existingFeather, onConfirm,
                                         width={image.naturalWidth} height={image.naturalHeight}
                                         listening={false} />
                                 )}
+                                <LiveDrawingShape shape={drawingShape} />
                             </Layer>
                         </Stage>
                     )}

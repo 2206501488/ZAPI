@@ -1,6 +1,7 @@
 import { Copy, Eye, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { checkGenerationJob, deleteGenerationJob, deleteGenerationJobs, listGenerationJobs, type GenerationJob } from '../../services/api';
+import { checkGenerationJob, deleteGenerationJob, deleteGenerationJobs, listGenerationJobs, saveToGallery, type GenerationJob } from '../../services/api';
+import { useStore } from '../../store';
 import { useProviders } from '../../hooks/useProviders';
 import { providerLabel } from '../../utils/providers';
 import { ReferenceImageStrip } from '../../components/shared/ReferenceImageStrip';
@@ -120,7 +121,27 @@ function sortJobsByCreatedAt(jobs: GenerationJob[]) {
     });
 }
 
+function isSamePath(galleryImage: any, jobSavedPath: string) {
+    if (!jobSavedPath) return false;
+    if (galleryImage.savedFilePath === jobSavedPath) {
+        return true;
+    }
+    if (galleryImage.relativePath) {
+        const normalizedJob = jobSavedPath.replace(/\\/g, '/').toLowerCase();
+        const normalizedRel = galleryImage.relativePath.replace(/\\/g, '/').toLowerCase();
+        if (normalizedJob.endsWith('/' + normalizedRel) || normalizedJob === normalizedRel) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export function JobsPage() {
+    const galleryImages = useStore((state) => state.images);
+    const addImportedImages = useStore((state) => state.addImportedImages);
+    const [syncing, setSyncing] = useState(false);
+    const [failedSyncPaths, setFailedSyncPaths] = useState<Set<string>>(new Set());
+
     const [jobs, setJobs] = useState<GenerationJob[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [status, setStatus] = useState('all');
@@ -131,6 +152,10 @@ export function JobsPage() {
     const [detailTop, setDetailTop] = useState(0);
     const [selectedResultIndex, setSelectedResultIndex] = useState(0);
     const [errorDialogJob, setErrorDialogJob] = useState<GenerationJob | null>(null);
+
+    useEffect(() => {
+        setFailedSyncPaths(new Set());
+    }, [selectedId]);
     const pageRef = useRef<HTMLElement>(null);
     const listPanelRef = useRef<HTMLDivElement>(null);
     const detailRef = useRef<HTMLDivElement>(null);
@@ -223,6 +248,81 @@ export function JobsPage() {
 
     const selected = pagedJobs.find((job) => job.id === selectedId) || pagedJobs[0];
     const selectedResults = Array.isArray(selected?.result) ? selected.result : [];
+
+    const missingImages = useMemo(() => {
+        if (!selected || !Array.isArray(selected.result)) return [];
+        
+        // 如果详情尚未加载完成（后端还未返回 file_exists 标记），先不进行计算，防止闪烁
+        const hasLoadedDetail = selected.result.every((img) => img.file_exists !== undefined);
+        if (!hasLoadedDetail) return [];
+
+        return selected.result.filter((img) => {
+            const savedPath = img.saved_path as string | undefined;
+            if (!savedPath) return false;
+            // 只有物理文件存在，且不在画廊里，且之前没有同步失败过的才需要同步
+            if (img.file_exists === false) return false;
+            if (failedSyncPaths.has(savedPath)) return false;
+            return !galleryImages.some((gImg) => isSamePath(gImg, savedPath));
+        });
+    }, [selected, galleryImages, failedSyncPaths]);
+
+    const handleSyncToGallery = async () => {
+        if (!selected || missingImages.length === 0) return;
+        setSyncing(true);
+        const nextFailed = new Set(failedSyncPaths);
+        try {
+            const newImagesToImport: any[] = [];
+            for (let i = 0; i < missingImages.length; i++) {
+                const img = missingImages[i];
+                const savedPath = img.saved_path as string;
+                const imageId = crypto.randomUUID();
+                const directUrl = `/api/serve-image?path=${encodeURIComponent(savedPath)}`;
+                
+                const newImg = {
+                    id: imageId,
+                    status: 'success',
+                    localPath: directUrl,
+                    savedFilePath: savedPath,
+                    thumbnail: directUrl,
+                    width: typeof img.width === 'number' ? img.width : undefined,
+                    height: typeof img.height === 'number' ? img.height : undefined,
+                    prompt: selected.prompt || '无提示词',
+                    apiType: selected.provider,
+                    params: {
+                        ratio: selected.params?.ratio || selected.params?.size || 'auto',
+                        quality: selected.params?.quality || 'imported',
+                        size: img.width && img.height ? `${img.width}x${img.height}` : undefined,
+                    },
+                    createdAt: selected.created_at || new Date().toISOString(),
+                    isFavorite: false,
+                    tags: [],
+                    jobId: selected.id,
+                    resultIndex: selected.result.indexOf(img) + 1,
+                };
+                
+                try {
+                    await saveToGallery(newImg as any, { force: true });
+                    newImagesToImport.push(newImg);
+                } catch (err) {
+                    console.warn(`Failed to sync image ${savedPath}:`, err);
+                    nextFailed.add(savedPath);
+                }
+            }
+            
+            if (newImagesToImport.length > 0) {
+                addImportedImages(newImagesToImport);
+            }
+            if (nextFailed.size !== failedSyncPaths.size) {
+                setFailedSyncPaths(nextFailed);
+            }
+        } catch (e) {
+            console.error('Failed to sync to gallery:', e);
+            window.alert(e instanceof Error ? e.message : '同步失败，请重试');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const pageStart = filtered.length ? (currentPage - 1) * pageSize + 1 : 0;
     const pageEnd = Math.min(currentPage * pageSize, filtered.length);
     const counts = {
@@ -233,10 +333,6 @@ export function JobsPage() {
     };
 
     const handleDeleteJob = async (job: GenerationJob) => {
-        const message = isActiveJob(job)
-            ? '这只会删除运行中心记录，不会取消正在执行的外部生成。确定删除吗？'
-            : '确定删除这条运行记录吗？';
-        if (!window.confirm(message)) return;
         const response = await deleteGenerationJob(job.id);
         if (!response.success) {
             window.alert(response.error?.message || '删除失败');
@@ -249,12 +345,6 @@ export function JobsPage() {
 
     const handleClearJobs = async () => {
         if (!jobs.length) return;
-        const activeCount = jobs.filter(isActiveJob).length;
-        const message = activeCount
-            ? `确定清空全部 ${jobs.length} 条运行中心记录吗？其中 ${activeCount} 条仍在运行；这不会取消外部生成，只会删除运行中心记录。`
-            : `确定清空全部 ${jobs.length} 条运行中心记录吗？`;
-        if (!window.confirm(message)) return;
-
         const response = await deleteGenerationJobs({ includeActive: true });
         if (!response.success) {
             window.alert(response.error?.message || '清空失败');
@@ -323,7 +413,7 @@ export function JobsPage() {
                         <button
                             key={value}
                             onClick={() => setStatus(value)}
-                            className={`rounded-full px-3 py-1.5 text-sm transition-colors ${status === value ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                            className={`rounded-full px-3 py-1.5 text-sm transition-colors ${status === value ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'}`}
                         >
                             {label}
                         </button>
@@ -331,7 +421,7 @@ export function JobsPage() {
                     <button
                         onClick={handleClearJobs}
                         disabled={!jobs.length}
-                        className="ml-auto inline-flex items-center gap-2 rounded-full border border-rose-500/35 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-200 transition-all hover:border-rose-400/70 hover:bg-rose-500/28 hover:text-white hover:shadow-[0_0_18px_rgba(244,63,94,0.22)] active:scale-[0.98] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-muted)] disabled:shadow-none"
+                        className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-1.5 text-sm text-[var(--danger-text)] transition-all hover:border-[var(--danger-border-hover)] hover:bg-[var(--danger-bg-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:border-[var(--border-subtle)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-muted)] disabled:shadow-none"
                         title="删除所有任务记录"
                     >
                         <Trash2 className="h-4 w-4" />
@@ -359,7 +449,7 @@ export function JobsPage() {
                                 <tr
                                     key={job.id}
                                     onClick={(event) => selectJobAtRow(job.id, event.currentTarget)}
-                                    className={`cursor-pointer border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--bg-card-hover)] ${selected?.id === job.id ? 'bg-[var(--accent-primary)]/12 shadow-[inset_3px_0_0_var(--accent-primary)]' : ''}`}
+                                    className={`cursor-pointer border-b border-[var(--border-subtle)] transition-colors ${selected?.id === job.id ? 'bg-[var(--accent-primary)]/12 shadow-[inset_3px_0_0_var(--accent-primary)] hover:bg-[var(--accent-primary)]/16' : 'hover:bg-[var(--bg-card-hover)]'}`}
                                 >
                                     <td className="max-w-[360px] px-4 py-3">
                                         <div className="font-mono text-xs text-[var(--text-muted)]">{job.id.slice(0, 12)}</div>
@@ -371,7 +461,7 @@ export function JobsPage() {
                                     </td>
                                     <td className="px-3 py-3">
                                         <div className="flex items-center gap-2">
-                                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-zinc-800">
+                                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[var(--bg-secondary)]">
                                                 <div className="h-full rounded-full bg-[var(--accent-primary)]" style={{ width: `${Math.min(100, job.progress || 0)}%` }} />
                                             </div>
                                             <span className="w-9 text-xs text-[var(--text-muted)]">{job.progress || 0}%</span>
@@ -406,7 +496,7 @@ export function JobsPage() {
                                                 <Eye className="h-4 w-4" />
                                             </button>
                                             <button
-                                                className="rounded p-1 hover:bg-rose-500/15 hover:text-rose-300"
+                                                className="rounded p-1 text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]"
                                                 title="删除任务记录"
                                                 aria-label="删除任务记录"
                                                 onClick={(event) => {
@@ -510,13 +600,13 @@ export function JobsPage() {
                                     type="button"
                                     disabled={!selected.error}
                                     onClick={() => setErrorDialogJob(selected)}
-                                    className="col-span-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3 text-left transition-colors enabled:hover:border-rose-400/45 enabled:hover:bg-rose-500/8 disabled:cursor-default"
+                                    className="col-span-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3 text-left transition-colors enabled:hover:border-[var(--danger-border-hover)] enabled:hover:bg-[var(--danger-bg)] disabled:cursor-default"
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="text-xs text-[var(--text-muted)]">失败原因</div>
-                                        {selected.error && <span className="text-xs text-rose-300">查看完整</span>}
+                                        {selected.error && <span className="text-xs text-[var(--danger-text)]">查看完整</span>}
                                     </div>
-                                    <div className={`mt-1 line-clamp-2 break-words text-[var(--text-primary)] ${selected.error ? 'text-rose-100/90' : ''}`}>
+                                    <div className={`mt-1 line-clamp-2 break-words text-[var(--text-primary)] ${selected.error ? 'text-[var(--danger-text)]' : ''}`}>
                                         {selected.error || '-'}
                                     </div>
                                 </button>
@@ -531,7 +621,19 @@ export function JobsPage() {
                                 </div>
                             </section>
                             <section>
-                                <div className="mb-2 text-xs font-medium text-[var(--text-muted)]">结果预览</div>
+                                <div className="mb-2 flex items-center justify-between">
+                                    <div className="text-xs font-medium text-[var(--text-muted)]">结果预览</div>
+                                    {missingImages.length > 0 && (
+                                        <button
+                                            type="button"
+                                            disabled={syncing}
+                                            onClick={handleSyncToGallery}
+                                            className="inline-flex items-center rounded-lg bg-[var(--accent-primary)] px-2.5 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {syncing ? '添加中...' : '添加至画廊'}
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     {(selected.result || []).map((img, index) => {
                                         const url = resultImageUrl(img);
@@ -543,7 +645,7 @@ export function JobsPage() {
                                                 title={url ? `选择结果 ${index + 1}` : '结果不可打开'}
                                                 onClick={() => setSelectedResultIndex(index)}
                                             >
-                                                <div className="aspect-square w-full overflow-hidden bg-zinc-900">
+                                                <div className="aspect-square w-full overflow-hidden bg-[var(--bg-secondary)]">
                                                     {url ? <img src={url} className="h-full w-full object-cover transition-transform hover:scale-[1.03]" /> : null}
                                                 </div>
                                             </button>
@@ -584,7 +686,7 @@ export function JobsPage() {
                             </button>
                         </div>
                         <div className="max-h-[65vh] overflow-auto p-4">
-                            <pre className="whitespace-pre-wrap break-words rounded-lg border border-rose-500/20 bg-rose-500/8 p-4 font-mono text-xs leading-relaxed text-rose-100/90">
+                            <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] p-4 font-mono text-xs leading-relaxed text-[var(--danger-text)]">
                                 {errorDialogJob.error}
                             </pre>
                         </div>

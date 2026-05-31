@@ -161,10 +161,10 @@ const GalleryCard = memo(function GalleryCard({ image, layout = 'css-masonry', s
             onContextMenu={(event) => onContextMenu(image, event)}
             onDragStart={(event) => event.preventDefault()}
         >
-            <div className={`relative overflow-hidden rounded-[3px] bg-[var(--bg-card)] border transition-all duration-300 hover:-translate-y-1 ${
+            <div className={`relative overflow-hidden rounded-[var(--radius-card)] bg-[var(--bg-card)] border transition-all duration-300 hover:-translate-y-1 ${
                 isSelected
                     ? 'border-transparent'
-                    : 'border-[var(--border-subtle)] hover:border-sky-300/45 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)]'
+                    : 'border-[var(--border-subtle)] hover:border-[var(--border-accent)] hover:shadow-[var(--shadow-level-1)]'
             }`} style={isSelected ? selectedCardStyle(selectionColor) : undefined}>
                 {/* Image or Loading Placeholder */}
                 <div
@@ -343,7 +343,7 @@ function GalleryContextMenu({
     return (
         <div
             data-no-selection="true"
-            className="fixed z-[80] w-56 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[rgba(24,24,27,0.96)] py-1 shadow-[0_18px_48px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="fixed z-[80] w-56 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-popover)] py-1 shadow-[var(--shadow-card)] backdrop-blur-xl"
             style={{ left, top }}
             onContextMenu={(event) => event.preventDefault()}
             onClick={(event) => event.stopPropagation()}
@@ -360,7 +360,7 @@ function GalleryContextMenu({
             <button className={itemClass} onClick={onRemoveTag}>移除标签</button>
             <button className={itemClass} onClick={onFavorite}>{allFavorite ? '取消收藏' : '收藏'}</button>
             <div className="my-1 border-t border-[var(--border-subtle)]" />
-            <button className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/10" onClick={onDelete}>
+            <button className="w-full px-3 py-2 text-left text-sm text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]" onClick={onDelete}>
                 删除
             </button>
         </div>
@@ -902,7 +902,7 @@ export function Gallery() {
             {selectedImageIds.length > 0 && !contextMenu && (
                 <div
                     data-no-selection="true"
-                    className="fixed right-5 top-5 z-[65] flex items-center gap-3 rounded-full border border-[var(--border-subtle)] bg-[rgba(24,24,27,0.92)] px-4 py-2 text-sm text-[var(--text-secondary)] shadow-lg backdrop-blur-xl md:right-7 md:top-6"
+                    className="fixed right-5 top-3 z-[65] flex items-center gap-3 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-popover)] px-4 py-2 text-sm text-[var(--text-secondary)] shadow-lg backdrop-blur-xl md:right-7 md:top-4"
                 >
                     <span>已选 {selectedImageIds.length} 张</span>
                     <button

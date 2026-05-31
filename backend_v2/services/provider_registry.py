@@ -237,7 +237,7 @@ def delete_provider(provider_id: str) -> None:
     reload_runtime_config()
 
 
-def build_job_adapters(*, app: Any, endpoints: dict[str, Any]) -> dict[str, Any]:
+def build_job_adapters(*, app: Any, endpoints: dict[str, Any], logger=None) -> dict[str, Any]:
     from services.jobs.providers import APIMartAdapter, FlaskEndpointAdapter, OpenAICompatibleImageAdapter, OpenAITaskAdapter, SousakuAdapter
 
     adapters: dict[str, Any] = {}
@@ -245,7 +245,7 @@ def build_job_adapters(*, app: Any, endpoints: dict[str, Any]) -> dict[str, Any]
         provider_id = provider["id"]
         provider_type = provider.get("type")
         if provider_type == "sousaku":
-            adapters[provider_id] = SousakuAdapter()
+            adapters[provider_id] = SousakuAdapter(logger=logger)
         elif provider_type == "openai-compatible" and provider_id not in {"openai", "cliproxy"}:
             adapters[provider_id] = OpenAICompatibleImageAdapter(provider_id, provider)
         elif provider_id == "cliproxy":

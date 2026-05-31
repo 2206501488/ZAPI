@@ -691,6 +691,8 @@ class SousakuClient:
     def _task_from_raw(self, task_raw: dict[str, Any], *, task_id: str | None = None) -> SousakuTask:
         resolved_task_id = task_id or task_raw.get("task_id") or task_raw.get("id") or ""
         status = str(task_raw.get("status", "unknown"))
+        if self._raw_task_is_failed(task_raw, status):
+            status = "failed"
         return SousakuTask(
             task_id=resolved_task_id,
             status=status,
@@ -1026,6 +1028,25 @@ class SousakuClient:
                 add_from_content(item)
 
         return images
+
+    @staticmethod
+    def _raw_task_is_failed(task: dict[str, Any], status: str) -> bool:
+        normalized = str(status or "").lower()
+        if normalized in {"failed", "failure", "error", "canceled", "cancelled", "-1", "-2"}:
+            return True
+        if task.get("is_nsfw_error"):
+            return True
+
+        content = [item for item in (task.get("content") or []) if isinstance(item, dict)]
+        if not content:
+            return False
+
+        success_statuses = {"succeeded", "success", "completed", "complete", "done", "3", "4"}
+        failed_statuses = {"failed", "failure", "error", "canceled", "cancelled", "rejected", "-1", "-2"}
+        statuses = [str(item.get("status") or "").lower() for item in content]
+        if any(item_status in success_statuses for item_status in statuses):
+            return False
+        return all(item_status in failed_statuses or item.get("is_nsfw_error") for item_status, item in zip(statuses, content))
 
     @staticmethod
     def _looks_like_media_url(value: str) -> bool:

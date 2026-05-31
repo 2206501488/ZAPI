@@ -13,11 +13,11 @@ const statusLabel: Record<string, string> = {
 };
 
 const statusTone: Record<string, string> = {
-    available: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    available: 'bg-[var(--account-status-available-bg)] text-[var(--account-status-available-text)] border-[var(--account-status-available-border)]',
     busy: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
     low_quota: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
     invalid: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-    disabled: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30',
+    disabled: 'bg-[var(--account-status-disabled-bg)] text-[var(--account-status-disabled-text)] border-[var(--account-status-disabled-border)]',
 };
 
 const providers = ['sousaku', 'cliproxy', 'nanobanana2', 'apimart'];
@@ -101,10 +101,6 @@ export function AccountsPage() {
     const handleToggleAccount = async (account: ProviderAccount) => {
         if (provider !== 'sousaku') return;
         const disabled = account.status !== 'disabled';
-        const message = disabled
-            ? `确定停用 ${account.label}？停用后不会再参与 Sousaku 任务调度。`
-            : `确定启用 ${account.label}？启用后会重新参与 Sousaku 任务调度。`;
-        if (!window.confirm(message)) return;
         const response = await updateSousakuAccount(account.id, { disabled });
         if (!response.success) {
             window.alert(response.error?.message || '账号状态更新失败');
@@ -130,7 +126,6 @@ export function AccountsPage() {
 
     const handleDeleteAccount = async (account: ProviderAccount) => {
         if (provider !== 'sousaku') return;
-        if (!window.confirm(`确定删除 ${account.label}？这会从 sousaku_config.json 移除 token，但不会删除历史任务和画廊图片。`)) return;
         const response = await deleteSousakuAccount(account.id);
         if (!response.success) {
             window.alert(response.error?.message || '账号删除失败');
@@ -266,7 +261,7 @@ export function AccountsPage() {
                                     <div className="truncate text-base font-semibold text-[var(--text-primary)]">{account.label}</div>
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                         {planTags.map((tag) => (
-                                            <span key={tag} className="rounded-full bg-zinc-700/70 px-2 py-0.5 text-xs text-[var(--text-secondary)]">{tag}</span>
+                                            <span key={tag} className="rounded-full bg-[var(--account-plan-bg)] px-2 py-0.5 text-xs text-[var(--account-plan-text)]">{tag}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -278,10 +273,10 @@ export function AccountsPage() {
                             <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
                                 <div className="mb-2 flex items-center justify-between text-sm">
                                     <span className="text-[var(--text-muted)]">额度</span>
-                                    <span className="font-mono text-emerald-300">{remaining || '-'} {account.quota?.unit || ''}</span>
+                                    <span className="font-mono text-[var(--account-credit-text)]">{remaining || '-'} {account.quota?.unit || ''}</span>
                                 </div>
-                                <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-                                    <div className="h-full rounded-full bg-emerald-400" style={{ width: `${percent}%` }} />
+                                <div className="h-2 overflow-hidden rounded-full bg-[var(--account-progress-track)]">
+                                    <div className="h-full rounded-full bg-[var(--account-progress-fill)]" style={{ width: `${percent}%` }} />
                                 </div>
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[var(--text-secondary)]">
                                     <div>当前任务：{account.running_jobs || 0}</div>

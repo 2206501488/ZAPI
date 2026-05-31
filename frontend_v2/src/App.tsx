@@ -11,6 +11,7 @@ import { AccountsPage } from './pages/ops/AccountsPage';
 import { AnalyticsPage } from './pages/ops/AnalyticsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { useStore } from './store';
+import { applyAppTheme } from './theme/appThemes';
 
 function GalleryPage() {
   return (
@@ -27,12 +28,17 @@ function AppRoutes() {
   const loadGalleryFromServer = useStore((state) => state.loadGalleryFromServer);
   const loadBackendCapabilities = useStore((state) => state.loadBackendCapabilities);
   const loadUiSettingsFromServer = useStore((state) => state.loadUiSettingsFromServer);
+  const appTheme = useStore((state) => state.appTheme);
 
   useEffect(() => {
     loadBackendCapabilities();
     loadUiSettingsFromServer();
     loadGalleryFromServer();
   }, [loadBackendCapabilities, loadGalleryFromServer, loadUiSettingsFromServer]);
+
+  useEffect(() => {
+    applyAppTheme(appTheme);
+  }, [appTheme]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-primary)]">

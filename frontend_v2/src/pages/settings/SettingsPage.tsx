@@ -15,6 +15,7 @@ import {
     Shield,
     SlidersHorizontal,
     Sparkles,
+    SwatchBook,
     Wifi,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
@@ -42,6 +43,8 @@ import {
 } from '../../store';
 import type { GalleryColumnSize, GalleryDisplayMode } from '../../store';
 import { notifyProvidersUpdated } from '../../hooks/useProviders';
+import { APP_THEMES } from '../../theme/appThemes';
+import type { AppThemeId } from '../../theme/appThemes';
 
 type SectionId = 'preferences' | 'providers' | 'jobs' | 'storage' | 'network' | 'advanced';
 
@@ -205,7 +208,7 @@ function SourceBadge({ source }: { source?: string }) {
 
 function Panel({ children }: { children: ReactNode }) {
     return (
-        <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+        <section className="rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-[var(--space-4)] shadow-[var(--shadow-level-1)]">
             {children}
         </section>
     );
@@ -240,18 +243,8 @@ function Toggle({
 }) {
     return (
         <button type="button" onClick={() => onChange(!checked)} className="flex items-center gap-3 text-left" aria-pressed={checked}>
-            <span
-                className={`relative h-6 w-11 rounded-full border transition-colors ${
-                    checked
-                        ? 'border-[var(--accent-primary)]/45 bg-[var(--accent-primary)]/20'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-secondary)]'
-                }`}
-            >
-                <span
-                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-all ${
-                        checked ? 'translate-x-5 bg-[var(--accent-primary)]' : 'translate-x-0 bg-[var(--text-muted)]'
-                    }`}
-                />
+            <span className={`pc-switch ${checked ? 'pc-switch--checked' : ''}`}>
+                <span className="pc-switch__thumb" />
             </span>
             <span className="text-sm text-[var(--text-primary)]">{label}</span>
         </button>
@@ -271,7 +264,7 @@ function fieldClassName(locked = false, extra = '') {
     const stateClass = locked
         ? 'cursor-not-allowed border-dashed text-[var(--text-muted)]'
         : 'text-[var(--text-primary)] focus:border-[var(--accent-primary)]';
-    return `w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-2 text-sm outline-none ${stateClass} ${extra}`;
+    return `w-full rounded-[var(--radius-control)] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-2 text-sm outline-none ${stateClass} ${extra}`;
 }
 
 function ColorPreference({
@@ -336,7 +329,7 @@ function ColorPreference({
                 />
             </div>
             {pickerOpen && (
-                <div className="absolute left-0 top-[3.7rem] z-[90] w-64 rounded-xl border border-[var(--border-subtle)] bg-[rgba(24,24,27,0.98)] p-3 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+                <div className="absolute left-0 top-[3.7rem] z-[90] w-64 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-popover)] p-3 shadow-[var(--shadow-card)] backdrop-blur-xl">
                     <div className="mb-3 flex items-center justify-between gap-3">
                         <span className="text-xs font-medium text-[var(--text-secondary)]">自定义颜色</span>
                         <span className="h-5 w-5 rounded border border-white/10" style={{ backgroundColor: colorInputValue }} />
@@ -534,13 +527,55 @@ function SharedColorPalette({ targets }: { targets: ColorTarget[] }) {
                         onClick={() => activeTarget.onChange(color)}
                         className={`h-8 w-8 rounded-md border shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18)] transition-transform hover:scale-105 ${
                             activeTarget.value.toLowerCase() === color.toLowerCase()
-                                ? 'border-white/80 ring-2 ring-white/18'
-                                : 'border-white/15'
+                                ? 'border-[var(--border-accent)] ring-2 ring-[var(--border-accent)]'
+                                : 'border-[var(--border-subtle)]'
                         }`}
                         style={{ backgroundColor: color }}
                         aria-label={`${activeTarget.label} ${color}`}
                     />
                 ))}
+            </div>
+        </div>
+    );
+}
+
+function ThemeSelector({
+    value,
+    onChange,
+}: {
+    value: AppThemeId;
+    onChange: (value: AppThemeId) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <div className="text-xs text-[var(--text-muted)]">整体配色</div>
+            <div className="grid gap-2 md:grid-cols-3">
+                {APP_THEMES.map((theme) => {
+                    const active = value === theme.id;
+                    return (
+                        <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => onChange(theme.id)}
+                            className={`pc-option-card min-h-[5.75rem] rounded-[var(--radius-card)] border px-3 py-2.5 text-left transition-colors ${active ? 'pc-option-card--active' : ''}`}
+                        >
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className="text-sm font-semibold text-[var(--text-primary)]">{theme.name}</span>
+                                {active && <Check className="h-4 w-4 text-[var(--option-indicator)]" />}
+                            </div>
+                            <div className="mb-2 flex items-center gap-1.5">
+                                {theme.swatches.map((color) => (
+                                    <span
+                                        key={color}
+                                        className="h-4 w-4 rounded-full border border-[var(--border-subtle)]"
+                                        style={{ background: color }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">{theme.description}</div>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
@@ -577,6 +612,8 @@ function PreferencesPanel() {
     const setGallerySelectionBoxColor = useStore((s) => s.setGallerySelectionBoxColor);
     const galleryTagColor = useStore((s) => s.galleryTagColor);
     const setGalleryTagColor = useStore((s) => s.setGalleryTagColor);
+    const appTheme = useStore((s) => s.appTheme);
+    const setAppTheme = useStore((s) => s.setAppTheme);
     const [galleryPageSizeDraft, setGalleryPageSizeDraft] = useState(String(galleryPageSize));
 
     useEffect(() => {
@@ -717,10 +754,11 @@ function PreferencesPanel() {
 
                     <Panel>
                         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                            <Check className="h-4 w-4 text-[var(--accent-primary)]" />
+                            <SwatchBook className="h-4 w-4 text-[var(--accent-primary)]" />
                             外观颜色
                         </div>
                         <div className="space-y-4">
+                            <ThemeSelector value={appTheme} onChange={setAppTheme} />
                             <SharedColorPalette targets={colorTargets} />
                             <div className="grid gap-4 md:grid-cols-3">
                                 <ColorPreference

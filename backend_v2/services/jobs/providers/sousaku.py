@@ -19,9 +19,10 @@ TERMINAL_FAILED = {"failed", "error", "cancelled", "timeout"}
 class SousakuAdapter(ProviderAdapter):
     name = "sousaku"
 
-    def __init__(self, *, poll_interval: int = JOB_POLL_INTERVAL_SECONDS, timeout_seconds: int = JOB_DEFAULT_TIMEOUT_SECONDS):
+    def __init__(self, *, poll_interval: int = JOB_POLL_INTERVAL_SECONDS, timeout_seconds: int = JOB_DEFAULT_TIMEOUT_SECONDS, logger=None):
         self.poll_interval = max(1, int(poll_interval or 3))
         self.timeout_seconds = max(30, int(timeout_seconds or 1800))
+        self.logger = logger
 
     def run(self, job: dict[str, Any], store: JobStore) -> list[dict[str, Any]]:
         payload = self.normalize_payload(job)

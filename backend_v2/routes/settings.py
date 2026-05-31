@@ -77,6 +77,7 @@ def get_settings():
         "success": True,
         "data": {
             "ui": {
+                "theme": _setting(app_settings["ui"]["theme"], raw_app_settings, "ui", "theme"),
                 "prompt": {
                     "autoClear": _setting(app_settings["ui"]["prompt"]["autoClear"], raw_app_settings, "ui", "prompt", "autoClear"),
                 },
