@@ -274,7 +274,11 @@
         "reference-image",
         "task-polling"
       ],
-      "notes": ""
+      "notes": "",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#8ecae6"
     },
     "openai": {
       "label": "ChatGPT2API",
@@ -337,7 +341,7 @@
           ],
           "features": {
             "referenceImage": true,
-            "mask": true
+            "mask": false
           },
           "payload": {
             "size": "ratio",
@@ -348,10 +352,13 @@
       ],
       "capabilities": [
         "text-to-image",
-        "reference-image",
-        "mask"
+        "reference-image"
       ],
-      "notes": "OpenAI-compatible local image API."
+      "notes": "OpenAI-compatible local image API.",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#8ecae6"
     },
     "cliproxy": {
       "label": "CLIProxy",
@@ -595,7 +602,11 @@
         "mask",
         "4K"
       ],
-      "notes": ""
+      "notes": "",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#8ecae6"
     },
     "nanobanana2": {
       "label": "Nanobanana2",
@@ -688,7 +699,7 @@
           ],
           "features": {
             "referenceImage": true,
-            "mask": true,
+            "mask": false,
             "thinking": true
           },
           "payload": {
@@ -702,10 +713,13 @@
       "capabilities": [
         "text-to-image",
         "reference-image",
-        "mask",
         "thinking"
       ],
-      "notes": ""
+      "notes": "",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#8ecae6"
     },
     "sousaku": {
       "label": "Sousaku",
@@ -1092,7 +1106,11 @@
         "account-pool",
         "credit-estimate"
       ],
-      "notes": "通过本地 Sousaku 适配器提交生图任务。"
+      "notes": "通过本地 Sousaku 适配器提交生图任务。",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#8ecae6"
     }
   }
 }
