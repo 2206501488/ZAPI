@@ -16,6 +16,7 @@ def now_iso() -> str:
 class SousakuTaskBindingStore:
     def __init__(self, path: str | Path | None = None):
         self.path = Path(path or config.JOBS_DB_PATH)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
         self._init_db()
 
