@@ -56,7 +56,7 @@
   --border-cool: rgba(236, 72, 153, 0.42);
 
   /* Glassmorphism */
-  --glass-bg: rgba(28, 28, 30, 0.8);
+  --glass-bg: rgba(28, 28, 30, 0.95);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-blur: 12px;
 
@@ -64,7 +64,7 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 20px rgba(244, 63, 94, 0.3);
 
-  --composer-bg: rgba(28, 28, 30, 0.78);
+  --composer-bg: rgba(28, 28, 30, 0.95);
   --composer-border: rgba(255, 255, 255, 0.10);
   --composer-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
   --composer-tool-bg: rgba(18, 18, 21, 0.92);

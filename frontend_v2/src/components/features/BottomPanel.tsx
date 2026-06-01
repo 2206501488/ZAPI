@@ -641,7 +641,7 @@ export function BottomPanel() {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="floating-composer mb-2 rounded-xl p-3"
+                            className="mb-2 p-3 rounded-xl glass shadow-lg"
                         >
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* API Selector */}
@@ -669,7 +669,7 @@ export function BottomPanel() {
                 </AnimatePresence>
 
                 {/* Main input bar */}
-                <div className="floating-composer flex items-center gap-2 rounded-2xl p-2">
+                <div className="flex items-center gap-2 p-2 rounded-2xl glass shadow-2xl border border-[var(--border-subtle)]">
                     {/* Image picker button */}
                     <button
                         onClick={() => setShowImagePicker(true)}
