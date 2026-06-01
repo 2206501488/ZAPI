@@ -17,20 +17,26 @@ try {
   console.log(`⚠️ 未找到 server_port.json，使用默认端口 (后端:${backendPort}, 前端:${frontendPort})`)
 }
 
+const apiProxy = {
+  '/api': {
+    target: `http://127.0.0.1:${backendPort}`,
+    changeOrigin: true,
+    timeout: 1200000,      // 20 minutes timeout
+    proxyTimeout: 1200000, // 20 minutes proxy timeout
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: frontendPort,
     host: '127.0.0.1',
-    proxy: {
-      '/api': {
-        target: `http://127.0.0.1:${backendPort}`,
-        changeOrigin: true,
-        timeout: 1200000,      // 20 minutes timeout
-        proxyTimeout: 1200000, // 20 minutes proxy timeout
-      }
-    }
+    proxy: apiProxy,
+  },
+  preview: {
+    port: frontendPort,
+    host: '127.0.0.1',
+    proxy: apiProxy,
   }
 })
-

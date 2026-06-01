@@ -77,8 +77,8 @@ if defined BACKEND_CONDA_ENV (
 
 timeout /t 3 /nobreak >nul
 
-echo Starting ProxyCanvas frontend...
-start "ProxyCanvas Frontend" cmd /k "cd /d ""%FRONTEND_DIR%"" && npm run dev"
+echo Building and starting ProxyCanvas frontend in production mode...
+start "ProxyCanvas Frontend" cmd /k "cd /d ""%FRONTEND_DIR%"" && npm run build && npm run preview"
 
 timeout /t 5 /nobreak >nul
 

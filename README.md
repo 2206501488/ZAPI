@@ -63,8 +63,11 @@ python -u app.py
 
 ```powershell
 cd frontend_v2
-npm run dev
+npm run build
+npm run preview
 ```
+
+日常使用建议启动构建后的生产预览模式，内存占用和运行表现更接近正式环境。`npm run dev` 仅建议用于前端开发调试。
 
 默认地址：
 
@@ -73,7 +76,7 @@ npm run dev
 后端: http://localhost:5700
 ```
 
-Windows 用户也可以在安装依赖后运行 `start.bat`。脚本会启动 ProxyCanvas 后端和前端；如果配置了 CLIProxyAPI 或 ChatGPT2API 路径，也会一并启动对应服务。
+Windows 用户也可以在安装依赖后运行 `start.bat`。脚本会启动 ProxyCanvas 后端，并以 `npm run build && npm run preview` 启动前端；如果配置了 CLIProxyAPI 或 ChatGPT2API 路径，也会一并启动对应服务。
 
 ## 配置
 
