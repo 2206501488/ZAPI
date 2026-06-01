@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-token-tool"
+version = "0.1.0"
+description = "Config-driven SDK for browser-assisted token acquisition and account status viewing."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "auto-token-tool contributors" }]
+dependencies = [
+  "playwright>=1.44",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6.0"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+auto-token-tool = "auto_token_tool.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

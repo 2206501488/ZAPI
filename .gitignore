@@ -3,9 +3,13 @@
 # ================================
 __pycache__/
 *.py[cod]
+*.pyo
 *$py.class
 *.so
 .Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 *.egg
 *.egg-info/
 .eggs/
@@ -94,3 +98,10 @@ config/sousaku_accounts.json
 config/lumalabs_config.json
 experiments/
 
+# auto-token-tool local runtime state
+scripts/auto_token_tool/config.json
+scripts/auto_token_tool/config.yaml
+scripts/auto_token_tool/config.yml
+scripts/auto_token_tool/data/
+scripts/auto_token_tool/runtime/
+scripts/auto_token_tool/browser-profiles/

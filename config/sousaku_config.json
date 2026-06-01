@@ -5,13 +5,13 @@
   "save_dir": "gallery",
   "accounts_path": "sousaku_accounts.json",
   "model_credits": {
-    "low": 2,
-    "medium": 4,
-    "high": 13,
-    "gpt-image-2-low": 2,
-    "gpt-image-2": 4,
-    "gpt-image-2-medium": 4,
-    "gpt-image-2-high": 13,
+    "low": 4,
+    "medium": 8,
+    "high": 26,
+    "gpt-image-2-low": 4,
+    "gpt-image-2": 8,
+    "gpt-image-2-medium": 8,
+    "gpt-image-2-high": 26,
     "wan-image-2.7-pro": 2,
     "mj-image-v7": 2,
     "mj-image-niji-7": 2
@@ -21,6 +21,6 @@
   "poll_interval": 3,
   "retry_total": 3,
   "auto_rotate_token": true,
-  "min_credit_threshold": 5,
+  "min_credit_threshold": 10,
   "disabled_tokens": []
 }
