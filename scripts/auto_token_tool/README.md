@@ -17,6 +17,45 @@ copy examples\example.yaml config.yaml
 ```
 根据需要修改 `config.yaml`（如 `registration.email` 及 `verification` 配置）。
 
+## 邮箱与验证码模式
+
+本工具支持两类常用邮箱来源：
+
+### Gmail 主邮箱 + 点号别名
+
+适合一个 Gmail 收件箱接收多个点号别名验证码。注册邮箱由 `registration.email`
+生成，验证码通过 Google Apps Script 读取。
+
+```yaml
+verification:
+  source: gmail_script
+  gmail_script_url: "https://script.google.com/macros/s/AKfycb...你的部署ID.../exec"
+
+registration:
+  email: "your-main-gmail@gmail.com"
+  email_alias_mode: gmail_dot
+  gmail_max_dots: 3
+  max_attempts: 3
+```
+
+### Outlook 卡片列表 + Microsoft Graph
+
+适合使用一批 Outlook 邮箱。注册邮箱会从 Outlook 卡片文件逐个读取
+
+```yaml
+verification:
+  source: microsoft_graph
+
+registration:
+  email_alias_mode: list
+```
+
+默认卡片文件路径是代码内置的 `data/outlook_cards.txt`。卡片文件每行一个邮箱卡片，格式如下：
+
+```text
+email@outlook.com----password----refresh_token----client_id
+```
+
 ### 2. 方式 A：直接运行（免安装，以下方式二选一）
 * **Windows 双击运行：** 直接运行根目录下的 `run.bat`，即可启动交互式菜单。
 * **命令行手动运行：** 打开终端，执行以下命令：
@@ -166,7 +205,7 @@ registration:
   # （如果启用了 gmail_dot 模式，自动生成的别名邮件也会进入该主邮箱的收件箱中）
   email: "your_email@gmail.com"
 
-  # 邮箱别名模式（none = 仅使用主邮箱，gmail_dot = 自动生成带点号的 Gmail 别名）
+  # 邮箱别名模式（none = 仅使用主邮箱，gmail_dot = 自动生成带点号的 Gmail 别名，list = 读取 Outlook 卡片列表）
   email_alias_mode: gmail_dot
 
 # 4. 外部项目同步联动（选填，默认关闭）
@@ -185,10 +224,10 @@ chain:
 
 ## 安全提示
 * 请保护好本地生成的 `data/accounts.yaml` 和 `data/tokens.yaml` 文件，切勿提交至公开仓库。
+* 如果使用 Outlook 模式，请同样保护好 `data/outlook_cards.txt`，其中包含邮箱、refresh token 和 client ID。
 * 程序运行期间会在 `runtime/` 目录下生成浏览器的临时配置文件（如缓存、本地 Profile 等）。为了避免占用过多磁盘空间或彻底清理痕迹，**记得定期手动清理 `runtime/` 目录**。
 
 ## 免责声明
 
 1. **用途限制**：本项目仅限协议建模、教学演示、授权安全研究和内部非商业验证，禁止用于任何商业用途、黑灰产服务、未授权目标或违反第三方服务条款的场景。
 2. **责任自负**：一切法律、合规和安全责任由使用者自行承担。作者及贡献者对因使用本项目导致的账号限制、封禁、数据丢失或任何法律纠纷不承担任何直接或间接责任。
-

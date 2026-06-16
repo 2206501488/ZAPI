@@ -37,6 +37,7 @@ class VerificationConfig:
     poll_interval_seconds: int = 5
     max_code_attempts: int = 3
     proxy: str = "http://127.0.0.1:7890"
+    outlook_cards_path: str = "data/outlook_cards.txt"
 
 
 @dataclass
@@ -139,10 +140,10 @@ class AppConfig:
         self.config_path.write_text(new_content, encoding="utf-8")
 
     def validate(self) -> None:
-        if self.verification.source not in {"manual", "fixed", "gmail_script"}:
-            raise ConfigError("verification.source must be one of: manual, fixed, gmail_script")
-        if self.registration.email_alias_mode not in {"none", "gmail_dot"}:
-            raise ConfigError("registration.email_alias_mode must be one of: none, gmail_dot")
+        if self.verification.source not in {"manual", "fixed", "gmail_script", "microsoft_graph"}:
+            raise ConfigError("verification.source must be one of: manual, fixed, gmail_script, microsoft_graph")
+        if self.registration.email_alias_mode not in {"none", "gmail_dot", "list"}:
+            raise ConfigError("registration.email_alias_mode must be one of: none, gmail_dot, list")
         if self.browser.channel not in {"msedge", "chrome", "chromium"}:
             raise ConfigError("browser.channel must be one of: msedge, chrome, chromium")
         if self.registration.max_attempts < 1:

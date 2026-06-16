@@ -21,6 +21,23 @@ from .service import SousakuServiceClient
 from .storage import AccountStore, next_gmail_dot_alias
 from .verification import VerificationProvider
 from .generation import GenerationRunner
+from pathlib import Path
+
+
+def load_outlook_card_emails(path: str | Path) -> list[str]:
+    from pathlib import Path
+    p = Path(path)
+    if not p.exists():
+        return []
+    emails = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("----")
+        if parts:
+            emails.append(parts[0].strip())
+    return emails
 
 
 class LoginWorkflow:
@@ -55,6 +72,9 @@ class LoginWorkflow:
             except Exception as exc:
                 last_error = str(exc)
                 print(f"Login attempt {attempt + 1} failed: {last_error}")
+                if "防刷风控" in last_error or "risk control" in last_error.lower():
+                    print("检测到 IP 或设备触发防刷风控拦截，停止后续尝试。请更换 IP/代理后重试。")
+                    break
         return LoginResult(success=False, error=last_error)
 
     def _login_attempt(
@@ -123,15 +143,36 @@ class LoginWorkflow:
             return LoginResult(success=True, email=email, token=token, account=account)
 
     def _resolve_email(self, attempt: int) -> str:
-        email = self.config.registration.email.strip()
-        if not email:
-            raise LoginError("registration.email is required.")
-        if self.config.registration.email_alias_mode != "gmail_dot":
+        mode = self.config.registration.email_alias_mode
+        if mode == "gmail_dot":
+            email = self.config.registration.email.strip()
+            if not email:
+                raise LoginError("registration.email is required.")
+            used = {account.email.lower() for account in self.store.list()}
+            return next_gmail_dot_alias(
+                email, used, offset=attempt, max_dots=self.config.registration.gmail_max_dots
+            )
+        elif mode == "list":
+            card_path = self.config.verification.outlook_cards_path
+            resolved_path = self.config.resolve(card_path)
+            emails = load_outlook_card_emails(resolved_path)
+            if not emails:
+                raise LoginError(f"No emails found in card file: {resolved_path}")
+            
+            used = {account.email.lower() for account in self.store.list()}
+            available_emails = [e for e in emails if e.lower() not in used]
+            if not available_emails:
+                raise LoginError(f"All emails in card file ({resolved_path}) have already been registered.")
+            
+            if attempt < len(available_emails):
+                return available_emails[attempt]
+            else:
+                return available_emails[-1]
+        else:
+            email = self.config.registration.email.strip()
+            if not email:
+                raise LoginError("registration.email is required.")
             return email
-        used = {account.email.lower() for account in self.store.list()}
-        return next_gmail_dot_alias(
-            email, used, offset=attempt, max_dots=self.config.registration.gmail_max_dots
-        )
 
     def _after_login(self, token: str, email: str, page, *, interactive: bool | None = None) -> AccountRecord | None:
         is_interactive = interactive if interactive is not None else True

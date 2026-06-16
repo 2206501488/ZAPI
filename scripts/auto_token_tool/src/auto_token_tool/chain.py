@@ -58,7 +58,7 @@ class ChainWorkflow:
             print(f"正在使用账号 {inviter.email} 的邀请码注册一个新账号...")
             invited_result = self.login_workflow.login_once(
                 share_code=inviter.share_code,
-                keep_browser_open=False,
+                keep_browser_open=self.config.browser.keep_open,
                 interactive=False,
             )
             if not invited_result.success or not invited_result.account:
@@ -147,7 +147,7 @@ class ChainWorkflow:
     def _bootstrap_inviter(self) -> AccountRecord:
         print("正在注册主账号 A。")
         result: LoginResult = self.login_workflow.login_once(
-            keep_browser_open=False,
+            keep_browser_open=self.config.browser.keep_open,
             interactive=False,
         )
         if not result.success or not result.account:

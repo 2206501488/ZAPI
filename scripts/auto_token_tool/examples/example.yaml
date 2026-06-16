@@ -33,6 +33,7 @@ verification:
   #   manual       - 在终端中手动输入验证码
   #   fixed        - 使用下面配置的固定验证码（fixed_code），主要用于本地测试
   #   gmail_script - 轮询一个能够读取 Gmail 邮箱的 Google Apps Script Web 应用
+  #   microsoft_graph - 使用 Microsoft Graph 读取 Outlook 邮箱验证码
   source: gmail_script
 
   # 仅当 source 设置为 fixed 时生效。
@@ -61,6 +62,7 @@ registration:
   # 选项：
   #   none      - 始终仅使用上面配置的主邮箱（registration.email）
   #   gmail_dot - 自动生成带点号的 Gmail 邮箱别名
+  #   list      - 从 Outlook 卡片文件中逐个读取邮箱
   email_alias_mode: gmail_dot
 
   # 生成 Gmail 别名邮箱时允许的最大点数。
