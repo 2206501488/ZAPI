@@ -201,7 +201,7 @@ export async function listProviderAccounts(provider = 'sousaku', options?: { ref
     return response.data;
 }
 
-export async function addSousakuTokens(tokens: string): Promise<{
+export async function addSousakuTokens(tokens: string, provider = 'sousaku'): Promise<{
     success: boolean;
     added?: number;
     skipped?: number;
@@ -209,44 +209,44 @@ export async function addSousakuTokens(tokens: string): Promise<{
     refreshed?: number;
     error?: { message: string };
 }> {
-    const response = await api.post('/provider-accounts/sousaku/tokens', { tokens }, {
+    const response = await api.post(`/provider-accounts/${encodeURIComponent(provider)}/tokens`, { tokens }, {
         timeout: 120000,
     });
     return response.data;
 }
 
-export async function refreshSousakuAccount(accountId: string): Promise<{
+export async function refreshSousakuAccount(accountId: string, provider = 'sousaku'): Promise<{
     success: boolean;
     provider?: string;
     account_id?: string;
     error?: { message: string };
 }> {
-    const response = await api.post(`/provider-accounts/sousaku/${encodeURIComponent(accountId)}/refresh`, {}, {
+    const response = await api.post(`/provider-accounts/${encodeURIComponent(provider)}/${encodeURIComponent(accountId)}/refresh`, {}, {
         timeout: 120000,
     });
     return response.data;
 }
 
-export async function updateSousakuAccount(accountId: string, updates: { disabled: boolean }): Promise<{
+export async function updateSousakuAccount(accountId: string, updates: { disabled: boolean }, provider = 'sousaku'): Promise<{
     success: boolean;
     provider?: string;
     account_id?: string;
     disabled?: boolean;
     error?: { message: string };
 }> {
-    const response = await api.patch(`/provider-accounts/sousaku/${encodeURIComponent(accountId)}`, updates, {
+    const response = await api.patch(`/provider-accounts/${encodeURIComponent(provider)}/${encodeURIComponent(accountId)}`, updates, {
         timeout: 30000,
     });
     return response.data;
 }
 
-export async function deleteSousakuAccount(accountId: string): Promise<{
+export async function deleteSousakuAccount(accountId: string, provider = 'sousaku'): Promise<{
     success: boolean;
     provider?: string;
     account_id?: string;
     error?: { message: string };
 }> {
-    const response = await api.delete(`/provider-accounts/sousaku/${encodeURIComponent(accountId)}`, {
+    const response = await api.delete(`/provider-accounts/${encodeURIComponent(provider)}/${encodeURIComponent(accountId)}`, {
         timeout: 30000,
     });
     return response.data;

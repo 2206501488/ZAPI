@@ -35,13 +35,14 @@ class ManualCodeProvider:
 
 
 class GmailScriptProvider:
-    def __init__(self, config: VerificationConfig) -> None:
+    def __init__(self, config: VerificationConfig, provider_id: str = "sousaku") -> None:
         if not config.gmail_script_url:
             raise ConfigError("verification.gmail_script_url is required for gmail_script.")
         self.url = config.gmail_script_url
         self.poll_seconds = int(config.poll_seconds)
         self.poll_interval_seconds = int(config.poll_interval_seconds)
         self.proxy = config.proxy
+        self.provider_id = provider_id.strip().lower() or "sousaku"
 
     def get_code(self, email: str) -> str:
         print(f"正在等待获取邮箱 {email} 的验证码 (最多等待 {self.poll_seconds} 秒)...")
@@ -56,7 +57,11 @@ class GmailScriptProvider:
         last_print_time = 0
         while time.time() < deadline:
             try:
-                params = {"email": email, "timestamp": str(start_time_ms)}
+                params = {
+                    "email": email,
+                    "timestamp": str(start_time_ms),
+                    "provider_id": self.provider_id,
+                }
                 response = requests.get(self.url, params=params, proxies=proxies, timeout=20)
                 response.raise_for_status()
                 data = response.json()
@@ -65,7 +70,7 @@ class GmailScriptProvider:
                 subject = data.get("subject") or ""
                 
                 if "registration notice" in subject.lower() or "registration notice" in debug.lower() or "未能从正文中匹配到" in debug:
-                    raise LoginError("该邮箱注册已被 Sousaku AI 拒绝（系统判定该邮箱不符合注册资格，通常是因为 IP 或设备触发防刷风控）。")
+                    raise LoginError("该邮箱注册已被目标服务拒绝（系统判定该邮箱不符合注册资格，通常是因为 IP 或设备触发防刷风控）。")
                 
                 code = self._extract_code(data)
                 if code:
@@ -173,7 +178,7 @@ class MicrosoftGraphProvider:
                         subject = msg.get("subject", "")
                         # 检查是否为拒绝注册的通知信
                         if "registration notice" in subject.lower():
-                            raise LoginError("该邮箱注册已被 Sousaku AI 拒绝（系统判定该邮箱不符合注册资格，通常是因为 IP 或设备触发防刷风控）。")
+                            raise LoginError("该邮箱注册已被目标服务拒绝（系统判定该邮箱不符合注册资格，通常是因为 IP 或设备触发防刷风控）。")
                         
                         # 仅处理包含 "verification" 的验证码邮件
                         if "verification" not in subject.lower():
@@ -222,13 +227,17 @@ class MicrosoftGraphProvider:
         return response.json()["access_token"]
 
 
-def build_verification_provider(config: VerificationConfig, root_dir: Path | None = None) -> VerificationProvider:
+def build_verification_provider(
+    config: VerificationConfig,
+    root_dir: Path | None = None,
+    provider_id: str = "sousaku",
+) -> VerificationProvider:
     if config.source == "manual":
         return ManualCodeProvider()
     if config.source == "fixed":
         return FixedCodeProvider(config.fixed_code)
     if config.source == "gmail_script":
-        return GmailScriptProvider(config)
+        return GmailScriptProvider(config, provider_id=provider_id)
     if config.source == "microsoft_graph":
         return MicrosoftGraphProvider(config, root_dir=root_dir)
     raise ConfigError(f"Unsupported verification.source: {config.source}")

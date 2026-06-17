@@ -3,12 +3,18 @@
 推荐用 YAML，因为 YAML 可以写真正的注释：
 
 ```powershell
-Copy-Item examples\example.yaml config.yaml
+Copy-Item examples\sousaku.yaml config.yaml
 notepad config.yaml
 ```
 
+也可以复制 Hotgen 模板：
+
+```powershell
+Copy-Item examples\hotgen.yaml config.yaml
+```
+
 项目会优先使用 PyYAML；如果机器上没装 PyYAML，会自动使用内置的简单 YAML 解析器。
-这个内置解析器足够读取 `examples/example.yaml`，但复杂 YAML 语法请安装 PyYAML。
+这个内置解析器足够读取 `examples/sousaku.yaml` 与 `examples/hotgen.yaml`，但复杂 YAML 语法请安装 PyYAML。
 
 ## 最小手动验证码配置
 
@@ -29,7 +35,7 @@ registration:
 
 ## Gmail Script 自动读验证码
 
-`examples/example.yaml` 默认就是这个模式。你复制后只需要改两处：
+两个渠道模板默认都是这个模式。你复制后只需要改两处：
 
 - `verification.gmail_script_url`
 - `registration.email`
@@ -62,8 +68,17 @@ yo.ur.main@gmail.com (2点)
 
 ## 可选项
 
+- `service.provider_id`: `sousaku` / `hotgen`，用于选择 ProxyCanvas 同步目标
+- `service.api_base_url`: 当前渠道 API 域名
+- `service.cookie_domain`: 当前渠道登录 Cookie 域
+- `service.shared_storage_key`: 当前渠道偏好设置 localStorage key
 - `browser.channel`: `msedge` / `chrome` / `chromium`
+- `browser.profile_root`: 当前渠道浏览器临时 profile 目录，建议 Sousaku/Hotgen 分开
 - `verification.source`: `manual` / `fixed` / `gmail_script`
+- `verification.outlook_cards_path`: 当前渠道 Outlook 卡片文件路径
+- `accounts.path`: 当前渠道账号库路径
+- `accounts.tokens_path`: 当前渠道 token 导出路径
+- `generation.save_dir`: 当前渠道生成文件保存目录
 - `registration.email_alias_mode`: `none` / `gmail_dot`
 - `registration.gmail_max_dots`: 大于等于 0 的整数（默认为 `3`）
 - `browser.keep_open`: `true` / `false`
@@ -74,7 +89,7 @@ yo.ur.main@gmail.com (2点)
 
 ## 奖励、NSFW、生成任务
 
-`examples/example.yaml` 默认开启这些能力：
+两个渠道模板默认开启这些能力：
 
 ```yaml
 preferences:
@@ -111,6 +126,7 @@ chain:
 
   # 从 scripts/auto_token_tool/config.yaml 出发的相对路径
   # 示例：proxycanvas_config_path: ../../config/sousaku_config.json
+  # Hotgen 示例：proxycanvas_config_path: ../../config/hotgen_config.json
   proxycanvas_config_path:
   # 示例：proxycanvas_server_port_path: ../../server_port.json
   proxycanvas_server_port_path:
@@ -125,7 +141,8 @@ chain:
 
 ```powershell
 cd scripts\auto_token_tool
-Copy-Item examples\example.yaml config.yaml
+Copy-Item examples\sousaku.yaml config.yaml
+# 或者：Copy-Item examples\hotgen.yaml config.yaml
 notepad config.yaml
 .\test-sdk.bat
 .\run.bat

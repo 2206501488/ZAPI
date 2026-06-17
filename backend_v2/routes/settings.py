@@ -132,6 +132,7 @@ def get_settings():
                 "appSettings": {"path": "config/app_settings.json", "exists": APP_SETTINGS_PATH.exists()},
                 "providers": {"path": "config/providers.json", "exists": PROVIDERS_SETTINGS_PATH.exists()},
                 "sousaku": {"path": _display_config_path(config.SOUSAKU_CONFIG_PATH), "exists": Path(config.SOUSAKU_CONFIG_PATH).exists()},
+                "hotgen": {"path": _display_config_path(config.HOTGEN_CONFIG_PATH), "exists": Path(config.HOTGEN_CONFIG_PATH).exists()},
             },
         },
     })

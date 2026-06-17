@@ -72,6 +72,7 @@ def model_value(provider: str, payload: dict[str, Any], model_config: dict[str, 
         "apimart": "apimartModel",
         "cliproxy": "cliproxyModel",
         "sousaku": "sousakuModel",
+        "hotgen": "sousakuModel",
     }.get(provider)
     return str(payload.get(provider_key) or "").strip() if provider_key else ""
 
@@ -134,7 +135,7 @@ def canonical_resolution(value: Any) -> str:
 
 def sousaku_resolution(value: Any) -> str:
     normalized = canonical_resolution(value)
-    return normalized.lower() if normalized else str(value or "").strip()
+    return normalized.lower() if normalized else ""
 
 
 def normalize_sousaku_model(model: str) -> str:

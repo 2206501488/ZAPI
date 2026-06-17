@@ -261,7 +261,11 @@ class LoginWorkflow:
                     print("❌ 激活校验未通过，账户等级仍为 Free。请确认邀请是否已完成。")
 
         if self.config.preferences.enable_nsfw:
-            enable_nsfw_preference(page, self.config.service.app_base_url)
+            enable_nsfw_preference(
+                page,
+                self.config.service.app_base_url,
+                self.config.service.shared_storage_key,
+            )
         return refreshed
 
     def _fetch_account_after_login(self, token: str, email: str):

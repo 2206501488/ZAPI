@@ -1152,7 +1152,7 @@ function CustomProviderForm({ onReload }: { onReload: () => Promise<void> }) {
 }
 
 function ProviderDetails({ provider, onReload }: { provider: RuntimeProvider; onReload: () => Promise<void> }) {
-    const isSousaku = provider.type === 'sousaku';
+    const isSousaku = provider.type === 'sousaku' || provider.type === 'hotgen';
     const isOpenAICompatible = provider.type === 'openai-compatible';
     const isBuiltIn = Boolean(provider.builtin);
     const canEditIdentity = !isBuiltIn;

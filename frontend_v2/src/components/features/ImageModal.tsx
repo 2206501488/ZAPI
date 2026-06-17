@@ -472,7 +472,7 @@ export function ImageModal({ image: initialImage, onClose, images = [], onNaviga
                                     }</span>
                                 </div>
                             )}
-                            {(image.params.ratio && (image.apiType === 'openai' || image.apiType === 'nanobanana2' || image.apiType === 'apimart' || image.apiType === 'cliproxy' || image.apiType === 'sousaku')) && (
+                            {(image.params.ratio && (image.apiType === 'openai' || image.apiType === 'nanobanana2' || image.apiType === 'apimart' || image.apiType === 'cliproxy' || image.apiType === 'sousaku' || image.apiType === 'hotgen')) && (
                                 <div className="flex justify-between">
                                     <span className="text-[var(--text-muted)]">比例</span>
                                     <span className="text-[var(--text-primary)]">{image.params.ratio}</span>
@@ -519,19 +519,19 @@ export function ImageModal({ image: initialImage, onClose, images = [], onNaviga
                                     <span className="text-[var(--text-primary)]">{image.params.resolution}</span>
                                 </div>
                             )}
-                            {image.apiType === 'sousaku' && image.params.sousakuModel && (
+                            {(image.apiType === 'sousaku' || image.apiType === 'hotgen') && image.params.sousakuModel && (
                                 <div className="flex justify-between">
                                     <span className="text-[var(--text-muted)]">模型</span>
                                     <span className="text-[var(--text-primary)]">{formatSousakuModel(image.params.sousakuModel)}</span>
                                 </div>
                             )}
-                            {image.apiType === 'sousaku' && image.params.resolution && (
+                            {(image.apiType === 'sousaku' || image.apiType === 'hotgen') && image.params.resolution && (
                                 <div className="flex justify-between">
                                     <span className="text-[var(--text-muted)]">分辨率</span>
                                     <span className="text-[var(--text-primary)]">{String(image.params.resolution).toUpperCase()}</span>
                                 </div>
                             )}
-                            {image.apiType === 'sousaku' && image.params.sousakuAutoOptimize !== undefined && (
+                            {(image.apiType === 'sousaku' || image.apiType === 'hotgen') && image.params.sousakuAutoOptimize !== undefined && (
                                 <div className="flex justify-between">
                                     <span className="text-[var(--text-muted)]">自动优化</span>
                                     <span className={`px-2 py-0.5 rounded text-xs ${image.params.sousakuAutoOptimize ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>

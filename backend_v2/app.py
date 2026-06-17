@@ -128,6 +128,7 @@ SCOPE_COLORS = {
     "CLIPROXY": "\033[96m",
     "OPENAI": "\033[95m",
     "SOUSAKU": "\033[93m",
+    "HOTGEN": "\033[38;5;208m",
     "COMFYUI": "\033[92m",
     "GALLERY": "\033[95m",
     "URL": "\033[33m",
@@ -507,6 +508,9 @@ from routes.settings import settings_bp
 from services.sousaku_provider import create_task as create_sousaku_task, get_task as get_sousaku_task, refresh_account_records as refresh_sousaku_account_records
 from services.sousaku_provider import refresh_account_records_for_tokens as refresh_sousaku_account_records_for_tokens
 from services.sousaku.account_pool import ACCOUNT_POOL
+from services.hotgen_provider import refresh_account_records as refresh_hotgen_account_records
+from services.hotgen_provider import refresh_account_records_for_tokens as refresh_hotgen_account_records_for_tokens
+from services.hotgen.account_pool import ACCOUNT_POOL as HOTGEN_ACCOUNT_POOL
 
 app.register_blueprint(capabilities_bp)
 app.register_blueprint(files_bp)
@@ -1975,24 +1979,29 @@ def list_provider_accounts():
     """Return provider accounts in a common shape. First provider: Sousaku."""
     try:
         provider = (request.args.get("provider") or "sousaku").strip().lower()
-        if provider != "sousaku":
+        if provider not in {"sousaku", "hotgen"}:
             return jsonify({"success": True, "provider": provider, "data": []})
 
         if request.args.get("refresh") in {"1", "true", "yes"}:
-            records = refresh_sousaku_account_records()
-            log_event("SOUSAKU", "账号池已手动刷新", "OK", count=len(records))
+            if provider == "hotgen":
+                records = refresh_hotgen_account_records()
+                log_event("HOTGEN", "账号池已手动刷新", "OK", count=len(records))
+            else:
+                records = refresh_sousaku_account_records()
+                log_event("SOUSAKU", "账号池已手动刷新", "OK", count=len(records))
 
-        config_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
-        accounts_path = os.path.join(config_dir, "sousaku_accounts.json")
+        accounts_path = _hotgen_accounts_path() if provider == "hotgen" else _sousaku_accounts_path()
         if not os.path.exists(accounts_path):
             return jsonify({"success": True, "provider": provider, "data": []})
 
-        low_credit_threshold = _read_sousaku_low_credit_threshold(default=5)
+        low_credit_threshold = _read_hotgen_low_credit_threshold(default=5) if provider == "hotgen" else _read_sousaku_low_credit_threshold(default=5)
         with open(accounts_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
         accounts = []
-        config_payload = _read_sousaku_config_payload()
+        config_payload = _read_hotgen_config_payload() if provider == "hotgen" else _read_sousaku_config_payload()
         disabled_tokens = set(_normalize_sousaku_tokens(config_payload.get("disabled_tokens") or []))
+        account_pool = HOTGEN_ACCOUNT_POOL if provider == "hotgen" else ACCOUNT_POOL
+        provider_label = "Hotgen" if provider == "hotgen" else "Sousaku"
         for index, account in enumerate(payload.get("accounts") or []):
             label = (
                 account.get("user_email")
@@ -2000,13 +2009,13 @@ def list_provider_accounts():
                 or account.get("user_name")
                 or account.get("user_id")
                 or account.get("token_masked")
-                or f"Sousaku #{index + 1}"
+                or f"{provider_label} #{index + 1}"
             )
             total_credit = account.get("total_credit")
             upstream_running_count = int(account.get("running_task_count") or 0)
             error = account.get("error")
             token = str(account.get("token") or "")
-            runtime_overlay = ACCOUNT_POOL.overlay_for_token(token) if token else {}
+            runtime_overlay = account_pool.overlay_for_token(token) if token else {}
             local_running_count = int(runtime_overlay.get("local_running_jobs") or 0)
             running_count = upstream_running_count + local_running_count
             if token and token in disabled_tokens:
@@ -2026,7 +2035,7 @@ def list_provider_accounts():
 
             accounts.append({
                 "id": account.get("user_id") or account.get("token_masked") or str(index),
-                "provider": "sousaku",
+                "provider": provider,
                 "label": label,
                 "status": status,
                 "quota": {
@@ -2221,6 +2230,157 @@ def delete_sousaku_account(account_id):
         return jsonify({"success": False, "error": {"message": str(e)}}), 500
 
 
+@app.route('/api/provider-accounts/hotgen/tokens', methods=['POST'])
+def add_hotgen_tokens():
+    """Append tokens to hotgen_config.json, then refresh only newly added account records."""
+    try:
+        data = request.json or {}
+        raw_tokens = data.get("tokens") or data.get("token") or ""
+        incoming = _normalize_sousaku_tokens(raw_tokens)
+        if not incoming:
+            return jsonify({"success": False, "error": {"message": "token is required"}}), 400
+
+        config_payload = _read_hotgen_config_payload()
+        current = _normalize_sousaku_tokens(config_payload.get("tokens") or config_payload.get("token") or [])
+        seen = set(current)
+        added = []
+        skipped = []
+        for token in incoming:
+            if token in seen:
+                skipped.append(_mask_token(token))
+                continue
+            current.append(token)
+            seen.add(token)
+            added.append(token)
+
+        config_payload["tokens"] = current
+        config_payload.pop("token", None)
+        _write_hotgen_config_payload(config_payload)
+
+        records = refresh_hotgen_account_records_for_tokens(added)
+        log_event(
+            "HOTGEN",
+            "账号 Token 已导入",
+            "OK",
+            added=len(added),
+            skipped=len(skipped),
+            total=len(current),
+            tokens=[_mask_token(token) for token in added],
+        )
+        return jsonify({
+            "success": True,
+            "added": len(added),
+            "skipped": len(skipped),
+            "total": len(current),
+            "provider": "hotgen",
+            "count": len(records),
+            "refreshed": len(records),
+        })
+    except Exception as e:
+        log_event("HOTGEN", "账号 Token 导入失败", "ERROR", error=e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
+
+
+@app.route('/api/provider-accounts/hotgen/<path:account_id>/refresh', methods=['POST'])
+def refresh_hotgen_account(account_id):
+    """Refresh one cached Hotgen account record."""
+    try:
+        token = _find_hotgen_account_token(account_id)
+        if not token:
+            return jsonify({"success": False, "error": {"message": "account token not found"}}), 404
+
+        records = refresh_hotgen_account_records_for_tokens([token])
+        record = records[0] if records else None
+        log_event(
+            "HOTGEN",
+            "账号已单独刷新",
+            "OK",
+            account=account_id[:20],
+            token=_mask_token(token),
+            status="invalid" if record and record.get("error") else "updated",
+        )
+        return jsonify({
+            "success": True,
+            "provider": "hotgen",
+            "account_id": account_id,
+            "token_masked": _mask_token(token),
+            "data": record,
+        })
+    except Exception as e:
+        log_event("HOTGEN", "账号单独刷新失败", "ERROR", account=account_id[:20], error=e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
+
+
+@app.route('/api/provider-accounts/hotgen/<path:account_id>', methods=['PATCH'])
+def update_hotgen_account(account_id):
+    """Enable or disable a Hotgen token without deleting it from config."""
+    try:
+        data = request.json or {}
+        disabled = bool(data.get("disabled"))
+        token = _find_hotgen_account_token(account_id)
+        if not token:
+            return jsonify({"success": False, "error": {"message": "account token not found"}}), 404
+
+        config_payload = _read_hotgen_config_payload()
+        disabled_tokens = _normalize_sousaku_tokens(config_payload.get("disabled_tokens") or [])
+        disabled_set = set(disabled_tokens)
+        if disabled:
+            if token not in disabled_set:
+                disabled_tokens.append(token)
+        else:
+            disabled_tokens = [item for item in disabled_tokens if item != token]
+        config_payload["disabled_tokens"] = disabled_tokens
+        _write_hotgen_config_payload(config_payload)
+
+        log_event(
+            "HOTGEN",
+            "账号状态已更新",
+            "OK",
+            account=account_id[:20],
+            disabled=disabled,
+            token=_mask_token(token),
+        )
+        return jsonify({
+            "success": True,
+            "provider": "hotgen",
+            "account_id": account_id,
+            "disabled": disabled,
+            "token_masked": _mask_token(token),
+        })
+    except Exception as e:
+        log_event("HOTGEN", "账号状态更新失败", "ERROR", account=account_id[:20], error=e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
+
+
+@app.route('/api/provider-accounts/hotgen/<path:account_id>', methods=['DELETE'])
+def delete_hotgen_account(account_id):
+    """Remove a Hotgen token from config and drop its cached account record."""
+    try:
+        token = _find_hotgen_account_token(account_id)
+        if not token:
+            return jsonify({"success": False, "error": {"message": "account token not found"}}), 404
+
+        config_payload = _read_hotgen_config_payload()
+        tokens = _normalize_sousaku_tokens(config_payload.get("tokens") or config_payload.get("token") or [])
+        disabled_tokens = _normalize_sousaku_tokens(config_payload.get("disabled_tokens") or [])
+        config_payload["tokens"] = [item for item in tokens if item != token]
+        config_payload["disabled_tokens"] = [item for item in disabled_tokens if item != token]
+        config_payload.pop("token", None)
+        _write_hotgen_config_payload(config_payload)
+        _remove_hotgen_account_record(account_id, token)
+
+        log_event("HOTGEN", "账号已删除", "OK", account=account_id[:20], token=_mask_token(token))
+        return jsonify({
+            "success": True,
+            "provider": "hotgen",
+            "account_id": account_id,
+            "token_masked": _mask_token(token),
+        })
+    except Exception as e:
+        log_event("HOTGEN", "账号删除失败", "ERROR", account=account_id[:20], error=e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
+
+
 def _read_sousaku_config_payload() -> dict:
     try:
         with open(config.SOUSAKU_CONFIG_PATH, "r", encoding="utf-8-sig") as f:
@@ -2305,6 +2465,95 @@ def _remove_sousaku_account_record(account_id: str, token: str) -> None:
 def _read_sousaku_low_credit_threshold(default: int = 5) -> int:
     try:
         payload = _read_sousaku_config_payload()
+        return int(payload.get("min_credit_threshold", default))
+    except Exception:
+        return default
+
+
+def _read_hotgen_config_payload() -> dict:
+    try:
+        with open(config.HOTGEN_CONFIG_PATH, "r", encoding="utf-8-sig") as f:
+            payload = json.load(f)
+        return payload if isinstance(payload, dict) else {}
+    except FileNotFoundError:
+        return {}
+
+
+def _write_hotgen_config_payload(payload: dict) -> None:
+    os.makedirs(os.path.dirname(os.path.abspath(config.HOTGEN_CONFIG_PATH)), exist_ok=True)
+    with open(config.HOTGEN_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+def _hotgen_accounts_path() -> str:
+    config_dir = os.path.dirname(os.path.abspath(config.HOTGEN_CONFIG_PATH))
+    config_payload = _read_hotgen_config_payload()
+    accounts_path = config_payload.get("accounts_path") or "hotgen_accounts.json"
+    return accounts_path if os.path.isabs(accounts_path) else os.path.join(config_dir, accounts_path)
+
+
+def _find_hotgen_account_token(account_id: str) -> str:
+    account_id = str(account_id or "")
+    accounts_path = _hotgen_accounts_path()
+    accounts = []
+    if os.path.exists(accounts_path):
+        try:
+            with open(accounts_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+            accounts = payload.get("accounts") or []
+        except Exception:
+            accounts = []
+
+    for account in accounts:
+        if not isinstance(account, dict):
+            continue
+        token = str(account.get("token") or "")
+        matches = {
+            str(account.get("user_id") or ""),
+            str(account.get("token_masked") or ""),
+            token,
+            _mask_token(token) if token else "",
+        }
+        if account_id in matches:
+            return token
+
+    config_payload = _read_hotgen_config_payload()
+    for token in _normalize_sousaku_tokens(config_payload.get("tokens") or config_payload.get("token") or []):
+        if account_id in {token, _mask_token(token)}:
+            return token
+    for token in _normalize_sousaku_tokens(config_payload.get("disabled_tokens") or []):
+        if account_id in {token, _mask_token(token)}:
+            return token
+    return ""
+
+
+def _remove_hotgen_account_record(account_id: str, token: str) -> None:
+    accounts_path = _hotgen_accounts_path()
+    if not os.path.exists(accounts_path):
+        return
+    try:
+        with open(accounts_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        accounts = payload.get("accounts") or []
+        next_accounts = []
+        for account in accounts:
+            if not isinstance(account, dict):
+                continue
+            account_token = str(account.get("token") or "")
+            if account_token == token or str(account.get("user_id") or "") == account_id:
+                continue
+            next_accounts.append(account)
+        payload["accounts"] = next_accounts
+        payload["count"] = len(next_accounts)
+        with open(accounts_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        log_event("HOTGEN", "账号缓存删除失败", "WARN", account=account_id[:20], error=exc)
+
+
+def _read_hotgen_low_credit_threshold(default: int = 5) -> int:
+    try:
+        payload = _read_hotgen_config_payload()
         return int(payload.get("min_credit_threshold", default))
     except Exception:
         return default
@@ -2768,12 +3017,25 @@ def configure_job_provider_adapters():
 def refresh_sousaku_accounts_async(reason: str) -> None:
     def _run() -> None:
         try:
+            log_event("SOUSAKU", "账号池开始刷新", reason=reason)
             records = refresh_sousaku_account_records()
             log_event("SOUSAKU", "账号池已刷新", "OK", reason=reason, count=len(records))
         except Exception as exc:
             log_event("SOUSAKU", "账号池刷新失败", "WARN", reason=reason, error=exc)
 
     threading.Thread(target=_run, name=f"sousaku-account-refresh-{reason}", daemon=True).start()
+
+
+def refresh_hotgen_accounts_async(reason: str) -> None:
+    def _run() -> None:
+        try:
+            log_event("HOTGEN", "账号池开始刷新", reason=reason)
+            records = refresh_hotgen_account_records()
+            log_event("HOTGEN", "账号池已刷新", "OK", reason=reason, count=len(records))
+        except Exception as exc:
+            log_event("HOTGEN", "账号池刷新失败", "WARN", reason=reason, error=exc)
+
+    threading.Thread(target=_run, name=f"hotgen-account-refresh-{reason}", daemon=True).start()
 
 
 configure_job_provider_adapters()
@@ -2805,6 +3067,7 @@ if __name__ == '__main__':
         else:
             log_event("JOB", "Job Worker 未启用", "WARN")
         refresh_sousaku_accounts_async("startup")
+        refresh_hotgen_accounts_async("startup")
         log_event("STARTUP", "接口", method="GET", path="/api/balance", name="余额")
         log_event("STARTUP", "接口", method="POST", path="/api/jobs", name="后台任务入队")
         log_event("STARTUP", "接口", method="GET", path="/api/jobs", name="后台任务列表")

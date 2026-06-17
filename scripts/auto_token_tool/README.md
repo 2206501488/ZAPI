@@ -13,9 +13,28 @@ python -m playwright install msedge chrome
 ```
 拷贝并移动到项目根目录下，命名为 config.yaml，然后进行编辑：
 ```bash
-copy examples\example.yaml config.yaml
+copy examples\sousaku.yaml config.yaml
 ```
 根据需要修改 `config.yaml`（如 `registration.email` 及 `verification` 配置）。
+
+也可以直接复制 Hotgen 模板：
+
+```bash
+copy examples\hotgen.yaml config.yaml
+```
+
+运行数据按渠道隔离保存：
+
+```text
+data/sousaku/accounts.yaml
+data/sousaku/tokens.yaml
+data/sousaku/outlook_cards.txt
+data/hotgen/accounts.yaml
+data/hotgen/tokens.yaml
+data/hotgen/outlook_cards.txt
+runtime/browser-profiles/sousaku/
+runtime/browser-profiles/hotgen/
+```
 
 ## 邮箱与验证码模式
 
@@ -50,7 +69,7 @@ registration:
   email_alias_mode: list
 ```
 
-默认卡片文件路径是代码内置的 `data/outlook_cards.txt`。卡片文件每行一个邮箱卡片，格式如下：
+默认卡片文件路径按渠道配置。Sousaku 使用 `data/sousaku/outlook_cards.txt`，Hotgen 使用 `data/hotgen/outlook_cards.txt`。卡片文件每行一个邮箱卡片，格式如下：
 
 ```text
 email@outlook.com----password----refresh_token----client_id
@@ -105,6 +124,8 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify({error: "Missing email parameter"}))
                          .setMimeType(ContentService.MimeType.JSON);
   }
+  var providerId = String(e.parameter.provider_id || "sousaku").toLowerCase();
+  var serviceKeyword = providerId === "hotgen" ? "Hotgen AI" : "Sousaku";
 
   // 获取 Python 传递过来的本次请求开始时间戳（毫秒）
   var minTimestamp = null;
@@ -113,17 +134,19 @@ function doGet(e) {
   }
 
   // 仅在普通收件箱中搜索（移除了 in:anywhere，同时去掉了 is:unread）
-  var threads = GmailApp.search('to:"' + email + '" "Sousaku"');
+  var threads = GmailApp.search('to:"' + email + '" "' + serviceKeyword + '"');
   if (threads.length === 0) {
-    threads = GmailApp.search('subject:"Sousaku"');
+    threads = GmailApp.search('subject:"' + serviceKeyword + '"');
   }
 
   var code = null;
   var debugInfo = "";
+  var matchedSubject = "";
 
   if (threads.length > 0) {
     var messages = threads[0].getMessages();
     var latestMessage = messages[messages.length - 1]; // 获取最新的一封邮件
+    matchedSubject = latestMessage.getSubject();
     var msgDate = latestMessage.getDate();
     var now = new Date();
 
@@ -143,7 +166,14 @@ function doGet(e) {
       var body = latestMessage.getPlainBody();
 
       // 正则匹配 6 位数字验证码
-      var match = body.match(/Your verification code is:[\s\S]*?(\d{6})/i);
+      var match = body.match(/Your verification code(?:\s+for\s+[^\\n]+)?\s+is:?[\s\S]*?(\d{6})/i)
+               || body.match(/验证码[\s\S]*?(\d{6})/i);
+      if (!match) {
+        var fallback = body.match(/(^|[^\d#])(\d{6})(?!\d)/);
+        if (fallback) {
+          match = [fallback[0], fallback[2]];
+        }
+      }
       if (match) {
         code = match[1];
         latestMessage.markRead(); // 标记为已读，避免重复获取旧邮件
@@ -155,11 +185,12 @@ function doGet(e) {
       debugInfo += " | 最新的一封邮件发送于本次请求开始之前，已被安全过滤。";
     }
   } else {
-    debugInfo = "未在普通收件箱中找到发送给 " + email + " 且包含 Sousaku 的邮件";
+    debugInfo = "未在普通收件箱中找到发送给 " + email + " 且属于 " + providerId + " 的验证码邮件";
   }
 
   var response = {
     code: code,
+    subject: matchedSubject,
     debug: debugInfo
   };
 
@@ -184,6 +215,7 @@ function doGet(e) {
 # 1. 目标服务与邀请码配置
 service:
   name: sousaku
+  provider_id: sousaku
   # 链式注册的初始邀请码（若本地没有可用账号，将使用此码作为起点，已修改为 QDFQS6）
   default_share_code: QDFQS6
 
@@ -191,6 +223,7 @@ service:
 verification:
   # 验证码来源修改为 gmail_script
   source: gmail_script
+  outlook_cards_path: data/sousaku/outlook_cards.txt
 
   # 将第 9 步获取到的 Web 应用 URL 填入此处（用双引号包裹）
   gmail_script_url: "https://script.google.com/macros/s/AKfycb...你的部署ID.../exec"
@@ -223,8 +256,8 @@ chain:
 ---
 
 ## 安全提示
-* 请保护好本地生成的 `data/accounts.yaml` 和 `data/tokens.yaml` 文件，切勿提交至公开仓库。
-* 如果使用 Outlook 模式，请同样保护好 `data/outlook_cards.txt`，其中包含邮箱、refresh token 和 client ID。
+* 请保护好本地生成的 `data/sousaku/` 与 `data/hotgen/` 下的账号、Token 和邮箱卡片文件，切勿提交至公开仓库。
+* 如果使用 Outlook 模式，请同样保护好对应渠道的 `outlook_cards.txt`，其中包含邮箱、refresh token 和 client ID。
 * 程序运行期间会在 `runtime/` 目录下生成浏览器的临时配置文件（如缓存、本地 Profile 等）。为了避免占用过多磁盘空间或彻底清理痕迹，**记得定期手动清理 `runtime/` 目录**。
 
 ## 免责声明

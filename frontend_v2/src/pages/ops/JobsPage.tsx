@@ -289,8 +289,8 @@ export function JobsPage() {
                     prompt: selected.prompt || '无提示词',
                     apiType: selected.provider,
                     params: {
+                        ...(selected.params || {}),
                         ratio: selected.params?.ratio || selected.params?.size || 'auto',
-                        quality: selected.params?.quality || 'imported',
                         size: img.width && img.height ? `${img.width}x${img.height}` : undefined,
                     },
                     createdAt: selected.created_at || new Date().toISOString(),
@@ -298,6 +298,9 @@ export function JobsPage() {
                     tags: [],
                     jobId: selected.id,
                     resultIndex: selected.result.indexOf(img) + 1,
+                    providerIndex: selected.result.indexOf(img) + 1,
+                    originalUrl: typeof img.url === 'string' ? img.url : undefined,
+                    inputImages: Array.isArray(selected.input_images) ? selected.input_images : [],
                 };
                 
                 try {

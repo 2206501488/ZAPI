@@ -350,7 +350,7 @@ def resend_verification_code(page: Page) -> bool:
     return True
 
 
-def extract_token(page: Page, seconds: int, api_base_url: str = "https://api.sousaku.ai") -> str | None:
+def extract_token(page: Page, seconds: int, api_base_url: str = "") -> str | None:
     captured: dict[str, str] = {}
 
     def is_valid_token(val: Any) -> bool:
@@ -420,20 +420,21 @@ def extract_token(page: Page, seconds: int, api_base_url: str = "https://api.sou
         except Exception:
             pass
 
-        try:
+        if api_base_url:
             api_url = api_base_url.rstrip("/") + "/v1/user"
-            page.evaluate(
-                """(url) => {
-                    fetch(url, {
-                        method: "GET",
-                        credentials: "include",
-                        headers: {"content-type": "application/json"}
-                    }).catch(() => {});
-                }""",
-                api_url,
-            )
-        except Exception:
-            pass
+            try:
+                page.evaluate(
+                    """(url) => {
+                        fetch(url, {
+                            method: "GET",
+                            credentials: "include",
+                            headers: {"content-type": "application/json"}
+                        }).catch(() => {});
+                    }""",
+                    api_url,
+                )
+            except Exception:
+                pass
         page.wait_for_timeout(1000)
     return None
 
@@ -497,12 +498,12 @@ def install_blank_popup_cleanup(page: Page) -> None:
     page.on("popup", on_new_page)
 
 
-def enable_nsfw_preference(page: Page, app_url: str) -> None:
+def enable_nsfw_preference(page: Page, app_url: str, shared_storage_key: str = "Sousaku_Shared") -> None:
     for attempt in range(1, 4):
         try:
             page.wait_for_load_state("domcontentloaded", timeout=5000)
-            page.evaluate("""() => {
-                let shared = localStorage.getItem("Sousaku_Shared");
+            page.evaluate("""(storageKey) => {
+                let shared = localStorage.getItem(storageKey);
                 let parsed = {};
                 if (shared) {
                   try { parsed = JSON.parse(shared); } catch (e) {}
@@ -510,8 +511,8 @@ def enable_nsfw_preference(page: Page, app_url: str) -> None:
                 if (!parsed.state) parsed.state = {};
                 if (!parsed.state.preference) parsed.state.preference = {};
                 parsed.state.preference.allowNSFWContent = true;
-                localStorage.setItem("Sousaku_Shared", JSON.stringify(parsed));
-            }""")
+                localStorage.setItem(storageKey, JSON.stringify(parsed));
+            }""", shared_storage_key)
             page.goto(app_url, wait_until="domcontentloaded", timeout=10000)
             return
         except Exception as exc:
@@ -540,13 +541,15 @@ def launch_authenticated_browser(config: AppConfig, token: str, label: str = "pl
             raise LoginError("Browser page was not created.")
         app_url = config.service.app_base_url.rstrip("/")
         signin_url = config.service.signin_base_url
+        cookie_domain = config.service.cookie_domain
+        shared_storage_key = config.service.shared_storage_key
         page.goto(signin_url, wait_until="domcontentloaded", timeout=60_000)
         try:
             page.context.add_cookies([
                 {
                     "name": "pp_user_token",
                     "value": token,
-                    "domain": ".sousaku.ai",
+                    "domain": cookie_domain,
                     "path": "/",
                     "httpOnly": False,
                     "secure": True,
@@ -556,18 +559,22 @@ def launch_authenticated_browser(config: AppConfig, token: str, label: str = "pl
         except Exception:
             pass
         page.evaluate(
-            """(token) => {
+            """({token, cookieDomain, storageKey}) => {
                 localStorage.setItem("pp_user_token", token);
-                document.cookie = "pp_user_token=" + token + "; path=/; domain=.sousaku.ai; max-age=31536000";
-                let shared = localStorage.getItem("Sousaku_Shared") || "{}";
+                document.cookie = "pp_user_token=" + token + "; path=/; domain=" + cookieDomain + "; max-age=31536000";
+                let shared = localStorage.getItem(storageKey) || "{}";
                 let parsed = {};
                 try { parsed = JSON.parse(shared); } catch (e) {}
                 if (!parsed.state) parsed.state = {};
                 if (!parsed.state.preference) parsed.state.preference = {};
                 parsed.state.preference.allowNSFWContent = true;
-                localStorage.setItem("Sousaku_Shared", JSON.stringify(parsed));
+                localStorage.setItem(storageKey, JSON.stringify(parsed));
             }""",
-            token,
+            {
+                "token": token,
+                "cookieDomain": cookie_domain,
+                "storageKey": shared_storage_key,
+            },
         )
         page.goto(app_url, wait_until="domcontentloaded", timeout=60_000)
         print("浏览器登录与 NSFW 注入完成。")

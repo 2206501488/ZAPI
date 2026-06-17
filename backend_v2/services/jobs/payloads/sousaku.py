@@ -33,7 +33,7 @@ def translate(
 
     default_resolution = sousaku_default_resolution(sousaku_model)
     if has_control(model_config, "resolution") or default_resolution:
-        translated["resolution"] = sousaku_resolution(resolution or default_resolution)
+        translated["resolution"] = sousaku_resolution(resolution) or sousaku_resolution(default_resolution)
 
     translated["auto_optimize"] = bool_value(source.get("sousakuAutoOptimize"), True)
 

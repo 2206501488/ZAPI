@@ -4,9 +4,12 @@
 service:
   # 通常你只需要修改这个默认邀请/分享码。
   name: sousaku
+  provider_id: sousaku
   signin_base_url: https://sousaku.ai/zh-CN/signin
   app_base_url: https://sousaku.ai/zh-CN
   api_base_url: https://api.sousaku.ai
+  cookie_domain: .sousaku.ai
+  shared_storage_key: Sousaku_Shared
   version_header: 2.0.0
   default_share_code: QDFQS6
 
@@ -26,7 +29,7 @@ browser:
 
   captcha_wait_seconds: 120
   token_wait_seconds: 180
-  profile_root: runtime/browser-profiles
+  profile_root: runtime/browser-profiles/sousaku
 
 verification:
   # 验证码来源选项：
@@ -45,14 +48,14 @@ verification:
   #   https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxx/exec
   # 请仅在本地的 config.yaml 中保留真实的 URL，切勿将其提交到公开仓库。
   gmail_script_url: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
-
   poll_seconds: 600
   poll_interval_seconds: 5
+  outlook_cards_path: data/sousaku/outlook_cards.txt
 
 accounts:
   # 这些文件包含敏感的 Token 信息，应保持本地存储，切勿上传。
-  path: data/accounts.yaml
-  tokens_path: data/tokens.yaml
+  path: data/sousaku/accounts.yaml
+  tokens_path: data/sousaku/tokens.yaml
 
 registration:
   # 在此处填写你的主 Gmail 邮箱地址。
@@ -113,7 +116,7 @@ generation:
   enabled: true
   wait_for_result: true
   publish_after_success: true
-  save_dir: data/generated
+  save_dir: data/sousaku/generated
   generation_timeout: 1200
   poll_interval_seconds: 3
 

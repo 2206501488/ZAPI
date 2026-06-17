@@ -5,7 +5,7 @@ import threading
 import time
 from typing import Any
 
-from services.jobs.providers import ProviderAdapter, ProviderTimeout, SousakuAdapter
+from services.jobs.providers import HotgenAdapter, ProviderAdapter, ProviderTimeout, SousakuAdapter
 from services.jobs.store import JobStore
 
 
@@ -33,7 +33,7 @@ class JobWorker:
         logger=None,
     ):
         self.store = store
-        self.adapters = adapters or {"sousaku": SousakuAdapter()}
+        self.adapters = adapters or {"sousaku": SousakuAdapter(), "hotgen": HotgenAdapter()}
         self.provider_limits = provider_limits or {"*": 1}
         self.max_workers = max(1, int(max_workers or 1))
         self.idle_sleep = max(0.1, float(idle_sleep or 0.5))

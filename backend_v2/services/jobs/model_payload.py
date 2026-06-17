@@ -39,7 +39,7 @@ def translate_provider_payload(provider: str, payload: dict[str, Any]) -> dict[s
     quality = source.get("quality")
     n = image_count(source, model_config)
 
-    if provider == "sousaku":
+    if provider in {"sousaku", "hotgen"}:
         return translate_sousaku(source, model=model, model_config=model_config, ratio=ratio, resolution=resolution, quality=quality, n=n)
     if provider == "nanobanana2":
         return translate_nanobanana2(source, model=model, model_config=model_config, ratio=ratio, resolution=resolution, quality=quality, n=n)

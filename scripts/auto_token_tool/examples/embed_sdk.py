@@ -10,7 +10,7 @@ from auto_token_tool import AutoTokenTool  # noqa: E402
 
 
 def main() -> None:
-    config_path = Path(__file__).resolve().parents[1] / "examples" / "example.yaml"
+    config_path = Path(__file__).resolve().parents[1] / "examples" / "sousaku.yaml"
     tool = AutoTokenTool.from_file(config_path)
     for account in tool.list_accounts():
         print(account.email, account.package_level, account.token_masked)

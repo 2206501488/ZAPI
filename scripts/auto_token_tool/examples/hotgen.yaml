@@ -1,0 +1,162 @@
+# 复制该文件并移动到项目根目录下，命名为 config.yaml，然后修改其中的配置值。
+# config.yaml、data/ 以及 runtime/ 等运行时产生的文件均已被 git 忽略。
+
+service:
+  # 通常你只需要修改这个默认邀请/分享码。
+  name: hotgen
+  provider_id: hotgen
+  signin_base_url: https://hotgen.ai/zh-CN/signin
+  app_base_url: https://hotgen.ai/zh-CN
+  api_base_url: https://api.hotgen.ai
+  cookie_domain: .hotgen.ai
+  shared_storage_key: Sousaku_Shared
+  version_header: 2.0.0
+  default_share_code: QDFQS6
+
+browser:
+  # 可选值：msedge, chrome, chromium
+  # msedge/chrome 会启动一个真实的无痕/无痕模式浏览器并通过 CDP 协议进行连接控制。
+  # chromium 使用 Playwright 自带的自动化浏览器，主要用于调试。
+  channel: msedge
+
+  # 普通批量或链式运行请保持为 false。
+  # 仅当你希望在登录完成后保持浏览器打开以进行人工检查时，才设置为 true。
+  keep_open: false
+
+  # 如果网站需要手动完成 Cloudflare 人机验证，请保持为 false（非无头模式）。
+  # 使用真实的 Edge/Chrome 无痕模式时，该 headless 参数会被自动忽略。
+  headless: false
+
+  captcha_wait_seconds: 120
+  token_wait_seconds: 180
+  profile_root: runtime/browser-profiles/hotgen
+
+verification:
+  # 验证码来源选项：
+  #   manual       - 在终端中手动输入验证码
+  #   fixed        - 使用下面配置的固定验证码（fixed_code），主要用于本地测试
+  #   gmail_script - 轮询一个能够读取 Gmail 邮箱的 Google Apps Script Web 应用
+  #   microsoft_graph - 使用 Microsoft Graph 读取 Outlook 邮箱验证码
+  source: gmail_script
+
+  # 仅当 source 设置为 fixed 时生效。
+  fixed_code: ""
+
+  # 仅当 source 设置为 gmail_script 时生效。
+  # 在此处粘贴你部署好的 Google Apps Script Web 应用 URL。
+  # 格式示例：
+  #   https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxx/exec
+  # 请仅在本地的 config.yaml 中保留真实的 URL，切勿将其提交到公开仓库。
+  gmail_script_url: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+  poll_seconds: 600
+  poll_interval_seconds: 5
+  outlook_cards_path: data/hotgen/outlook_cards.txt
+
+accounts:
+  # 这些文件包含敏感的 Token 信息，应保持本地存储，切勿上传。
+  path: data/hotgen/accounts.yaml
+  tokens_path: data/hotgen/tokens.yaml
+
+registration:
+  # 在此处填写你的主 Gmail 邮箱地址。
+  # 即使为别名（如带点号的邮箱）发送的验证邮件，依然会投递到这个主邮箱收件箱中。
+  email: your-main-gmail@gmail.com
+
+  # 选项：
+  #   none      - 始终仅使用上面配置的主邮箱（registration.email）
+  #   gmail_dot - 自动生成带点号的 Gmail 邮箱别名
+  #   list      - 从 Outlook 卡片文件中逐个读取邮箱
+  email_alias_mode: gmail_dot
+
+  # 生成 Gmail 别名邮箱时允许的最大点数。
+  # 某些网站（如 Hotgen）会限制或拦截包含 4 个或更多点号的邮箱。
+  gmail_max_dots: 3
+
+  # 当 email_alias_mode 设置为 gmail_dot 时，每次重试或注册新账号都将使用下一个点号别名。
+  max_attempts: 3
+
+chain:
+  # 链式登录流程：自动读取本地 Free 账号的邀请码注册一个新账号，
+  # 然后刷新或领取邀请人（大号）账号的邀请奖励。
+  # （注意：目前代码中未使用该开关，设为 true 或 false 均不影响手动运行链式登录）
+  enabled: false
+
+  final_reward_task_id: task-times-new-user-unlock-rewards
+
+  # 登录成功后需要完成的可选任务 ID 列表。
+  reward_task_ids:
+    - task-times-community-twitter
+    - task-times-community-discord
+
+  # 登录或生成任务完成后需要领取的奖励 ID 列表。
+  # 状态为“已领取”或“已完成”均被视为成功。
+  reward_claim_task_ids:
+    - task-times-community-discord
+    - task-times-community-twitter
+    - task-times-create-first-image
+    - task-times-create-first-video
+    - task-times-share-first-published
+
+  # 是否开启自动同步获取的 Token 到 ProxyCanvas 项目
+  sync_plus_to_proxycanvas: false
+  # 从 scripts/auto_token_tool/config.yaml 出发的相对路径
+  # 示例：proxycanvas_config_path: ../../config/hotgen_config.json
+  proxycanvas_config_path:
+  # 示例：proxycanvas_server_port_path: ../../server_port.json
+  proxycanvas_server_port_path:
+  # 链式登录流程结束后，是否自动打开浏览器并登录验证
+  open_final_plus_browser: true
+
+preferences:
+  # 登录成功后，自动在浏览器的 localStorage 中开启网站的 NSFW 偏好设置。
+  enable_nsfw: true
+
+  # 登录成功后，是否自动提交图像/视频生成任务。
+generation:
+  enabled: true
+  wait_for_result: true
+  publish_after_success: true
+  save_dir: data/hotgen/generated
+  generation_timeout: 1200
+  poll_interval_seconds: 3
+
+  tasks:
+    -
+      type: image
+      endpoint: /v1/generations/create_image
+      payload:
+        source: 2
+        prompt: "A clean cinematic anime portrait, high quality"
+        media: {}
+        parameters:
+          ratio: 1:1
+          size: ""
+          resolution: ""
+          auto_optimize: false
+        number: 1
+        credits: 0
+        model: seedream-4.5
+    -
+      type: video
+      endpoint: /v1/generations/create_video
+      payload:
+        source: 2
+        prompt: "A short cinematic camera move, high quality"
+        media: {}
+        parameters:
+          ratio: 1:1
+          resolution: 480p
+          duration: 3
+          camerafixed: false
+          auto_optimize: false
+        number: 1
+        credits: 3
+        model: seedance-fast
+
+webui:
+  host: 127.0.0.1
+  port: 8765
+
+  # true = 启动 WebUI 前先调用 Service API 刷新账号最新状态
+  # false = 仅读取本地保存的账号数据
+  refresh_on_open: false

@@ -19,6 +19,7 @@ PROVIDERS_SETTINGS_PATH = os.path.join(CONFIG_DIR, "providers.json")
 
 DEFAULT_SAVE_DIR = os.path.join(PROJECT_ROOT, "gallery")
 DEFAULT_SOUSAKU_CONFIG_PATH = os.path.join(CONFIG_DIR, "sousaku_config.json")
+DEFAULT_HOTGEN_CONFIG_PATH = os.path.join(CONFIG_DIR, "hotgen_config.json")
 
 DEFAULT_APP_SETTINGS: dict[str, Any] = {
     "server": {
@@ -58,6 +59,7 @@ DEFAULT_APP_SETTINGS: dict[str, Any] = {
         "sousakuStaleTaskSeconds": 30 * 60,
         "providerLimits": {
             "sousaku": 20,
+            "hotgen": 20,
             "cliproxy": 6,
             "nanobanana2": 6,
             "apimart": 20,
@@ -352,6 +354,15 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
     },
 }
 
+DEFAULT_PROVIDERS_SETTINGS["providers"]["hotgen"] = copy.deepcopy(DEFAULT_PROVIDERS_SETTINGS["providers"]["sousaku"])
+DEFAULT_PROVIDERS_SETTINGS["providers"]["hotgen"].update({
+    "label": "Hotgen",
+    "type": "hotgen",
+    "configPath": "config/hotgen_config.json",
+    "notes": "通过本地 Hotgen 适配器提交生图任务。",
+    "badgeColor": "#f97316",
+})
+
 JOBS_DB_PATH = os.path.join(PROJECT_ROOT, "data", "jobs.sqlite")
 GALLERY_DB_PATH = os.path.join(PROJECT_ROOT, "data", "gallery.sqlite")
 TELEGRAPH_URL = "https://telegraph-image-92x.pages.dev"
@@ -560,8 +571,9 @@ def normalized_providers_settings(raw: dict[str, Any] | None = None) -> dict[str
             provider["responseFormat"] = str(provider.get("responseFormat") or defaults.get("responseFormat") or "")
         if provider.get("imageAction") or defaults.get("imageAction"):
             provider["imageAction"] = str(provider.get("imageAction") or defaults.get("imageAction") or "")
-        if provider["type"] == "sousaku":
-            provider["configPath"] = str(provider.get("configPath") or defaults.get("configPath") or "config/sousaku_config.json")
+        if provider["type"] in {"sousaku", "hotgen"}:
+            fallback_config_path = "config/hotgen_config.json" if provider["type"] == "hotgen" else "config/sousaku_config.json"
+            provider["configPath"] = str(provider.get("configPath") or defaults.get("configPath") or fallback_config_path)
     return data
 
 
@@ -624,7 +636,7 @@ def _provider(provider_id: str) -> dict[str, Any]:
 def apply_runtime_config() -> None:
     global APP_SETTINGS, PROVIDERS_SETTINGS
     global SERVER_PORT, FRONTEND_PORT, BACKEND_USE_RELOADER
-    global OPENAI_SAVE_DIR, NANOBANANA2_SAVE_DIR, CLIPROXY_SAVE_DIR, SOUSAKU_SAVE_DIR
+    global OPENAI_SAVE_DIR, NANOBANANA2_SAVE_DIR, CLIPROXY_SAVE_DIR, SOUSAKU_SAVE_DIR, HOTGEN_SAVE_DIR
     global GALLERY_THUMBNAIL_WIDTH, GALLERY_THUMBNAIL_QUALITY, GALLERY_THUMBNAIL_CACHE_MAX_GB
     global GALLERY_COLUMNS, GALLERY_DISPLAY_MODE, GALLERY_PAGE_SIZE
     global GALLERY_DELETE_LOCAL_FILE, GALLERY_DELETE_IMPORTED_ORIGINAL
@@ -634,7 +646,7 @@ def apply_runtime_config() -> None:
     global LOG_LEVEL, LOG_COLOR, SOUSAKU_PROGRESS_PANEL
     global ENABLE_NANOBANANA2_JAILBREAK, NANOBANANA2_JAILBREAK_PROMPT
     global API_KEY, API_BASE_URL, OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_IMAGE_MODEL
-    global NANOBANANA2_API_KEY, NANOBANANA2_BASE_URL, CLIPROXY_API_KEY, CLIPROXY_BASE_URL, SOUSAKU_CONFIG_PATH
+    global NANOBANANA2_API_KEY, NANOBANANA2_BASE_URL, CLIPROXY_API_KEY, CLIPROXY_BASE_URL, SOUSAKU_CONFIG_PATH, HOTGEN_CONFIG_PATH
 
     APP_SETTINGS = normalized_app_settings()
     PROVIDERS_SETTINGS = normalized_providers_settings()
@@ -647,6 +659,7 @@ def apply_runtime_config() -> None:
     NANOBANANA2_SAVE_DIR = OPENAI_SAVE_DIR
     CLIPROXY_SAVE_DIR = OPENAI_SAVE_DIR
     SOUSAKU_SAVE_DIR = OPENAI_SAVE_DIR
+    HOTGEN_SAVE_DIR = OPENAI_SAVE_DIR
 
     GALLERY_THUMBNAIL_WIDTH = APP_SETTINGS["gallery"]["thumbnailWidth"]
     GALLERY_THUMBNAIL_QUALITY = APP_SETTINGS["gallery"]["thumbnailQuality"]
@@ -681,6 +694,7 @@ def apply_runtime_config() -> None:
     nanobanana2 = _provider("nanobanana2")
     cliproxy = _provider("cliproxy")
     sousaku = _provider("sousaku")
+    hotgen = _provider("hotgen")
 
     API_KEY = apimart.get("apiKey", "")
     API_BASE_URL = apimart.get("baseUrl", "")
@@ -692,6 +706,7 @@ def apply_runtime_config() -> None:
     CLIPROXY_API_KEY = cliproxy.get("apiKey", "")
     CLIPROXY_BASE_URL = cliproxy.get("baseUrl", "")
     SOUSAKU_CONFIG_PATH = _resolve_project_path(sousaku.get("configPath") or "config/sousaku_config.json")
+    HOTGEN_CONFIG_PATH = _resolve_project_path(hotgen.get("configPath") or "config/hotgen_config.json")
 
 
 apply_runtime_config()

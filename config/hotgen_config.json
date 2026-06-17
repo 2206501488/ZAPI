@@ -2,8 +2,10 @@
     "tokens":  [
 
                ],
+    "base_url":  "https://api.hotgen.ai",
+    "site_url":  "https://hotgen.ai",
     "save_dir":  "gallery",
-    "accounts_path":  "sousaku_accounts.json",
+    "accounts_path":  "hotgen_accounts.json",
     "model_credits":  {
                           "low":  4,
                           "medium":  8,

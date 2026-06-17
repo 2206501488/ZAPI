@@ -11,16 +11,16 @@ from typing import Any
 
 import config
 from services.reference_inputs import load_reference_image
-from services.sousaku.account_pool import ACCOUNT_POOL, TokenLease
-from services.sousaku.client_factory import create_sousaku_client
-from services.sousaku.task_bindings import TASK_BINDINGS
+from services.hotgen.account_pool import ACCOUNT_POOL, TokenLease
+from services.hotgen.client_factory import create_hotgen_client
+from services.hotgen.task_bindings import TASK_BINDINGS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from sdk.sousaku import SousakuClient  # noqa: E402
-from sdk.sousaku.exceptions import SousakuError, SousakuTaskFailedError  # noqa: E402
+from sdk.hotgen import HotgenClient  # noqa: E402
+from sdk.hotgen.exceptions import HotgenError, HotgenTaskFailedError  # noqa: E402
 
 
 _SAVED_BY_TASK: dict[str, dict[str, str]] = {}
@@ -41,7 +41,7 @@ _IMAGE_MODELS_FIXED_NUMBER = {
     "mj-image-niji-7",
 }
 
-def _sousaku_resolution(value: Any) -> str:
+def _hotgen_resolution(value: Any) -> str:
     normalized = str(value or "").strip().upper()
     return normalized.lower() if normalized in {"1K", "2K", "4K"} else ""
 
@@ -55,7 +55,7 @@ def create_task(data: dict[str, Any]) -> dict[str, Any]:
     active_lease: TokenLease | None = None
     task_id = ""
     try:
-        metadata_client = create_sousaku_client()
+        metadata_client = create_hotgen_client()
         n = _safe_int(data.get("n"), default=1, minimum=1, maximum=10)
         ratio = data.get("size") or data.get("ratio") or "1:1"
         model = data.get("model") or "medium"
@@ -64,7 +64,7 @@ def create_task(data: dict[str, Any]) -> dict[str, Any]:
             n = 4
         resolution = ""
         if resolved_model in _IMAGE_MODEL_DEFAULT_RESOLUTIONS:
-            resolution = _sousaku_resolution(data.get("resolution")) or _sousaku_resolution(_IMAGE_MODEL_DEFAULT_RESOLUTIONS[resolved_model])
+            resolution = _hotgen_resolution(data.get("resolution")) or _hotgen_resolution(_IMAGE_MODEL_DEFAULT_RESOLUTIONS[resolved_model])
         auto_optimize = bool(data.get("auto_optimize", False))
         estimated_credits = metadata_client.estimate_credits(resolved_model, n, resolution=resolution)
         temp_paths = _reference_images_to_temp_files(data.get("image_urls") or [])
@@ -87,7 +87,7 @@ def create_task(data: dict[str, Any]) -> dict[str, Any]:
                         "success": False,
                         "error": {
                             "message": (
-                                f"Sousaku 账号余额不足，已尝试 {len(attempted_tokens)} 个本地额度满足的账号。"
+                                f"Hotgen 账号余额不足，已尝试 {len(attempted_tokens)} 个本地额度满足的账号。"
                                 f"最后错误: {last_error}"
                             ),
                         },
@@ -95,7 +95,7 @@ def create_task(data: dict[str, Any]) -> dict[str, Any]:
                 return {"success": False, "error": {"message": str(exc)}}
 
             attempted_tokens.append(lease.token_masked)
-            client = create_sousaku_client(token=lease.token)
+            client = create_hotgen_client(token=lease.token)
             account_before = _account_snapshot_from_record(lease.account, lease)
 
             try:
@@ -172,7 +172,7 @@ def get_task(task_id: str) -> dict[str, Any]:
             if not saved_path:
                 try:
                     filename = _image_filename(task_id, index, image.url)
-                    saved_path = client.download_image(image, save_dir=config.SOUSAKU_SAVE_DIR, filename=filename)
+                    saved_path = client.download_image(image, save_dir=config.HOTGEN_SAVE_DIR, filename=filename)
                     saved_for_task[image.url] = saved_path
                 except Exception:
                     saved_path = None
@@ -204,7 +204,7 @@ def get_task(task_id: str) -> dict[str, Any]:
         if task.is_success or task.is_failed:
             release_task_account(task_id)
         return response
-    except SousakuTaskFailedError as exc:
+    except HotgenTaskFailedError as exc:
         release_task_account(task_id)
         return {
             "status": "failed",
@@ -215,7 +215,7 @@ def get_task(task_id: str) -> dict[str, Any]:
                 "result": {"images": []},
             },
         }
-    except SousakuError as exc:
+    except HotgenError as exc:
         release_task_account(task_id)
         return {"status": "failed", "error": {"message": str(exc)}}
     except Exception as exc:
@@ -228,9 +228,11 @@ def get_task(task_id: str) -> dict[str, Any]:
 
 
 def refresh_account_records() -> list[dict[str, Any]]:
-    config_payload = json.loads(Path(config.SOUSAKU_CONFIG_PATH).read_text(encoding="utf-8-sig"))
-    tokens = SousakuClient._normalize_tokens(config_payload.get("tokens") or config_payload.get("token"))
-    client = create_sousaku_client(tokens=tokens)
+    config_payload = json.loads(Path(config.HOTGEN_CONFIG_PATH).read_text(encoding="utf-8-sig"))
+    tokens = HotgenClient._normalize_tokens(config_payload.get("tokens") or config_payload.get("token"))
+    if not tokens:
+        return []
+    client = create_hotgen_client(tokens=tokens)
     with _ACCOUNTS_FILE_LOCK:
         return client.save_account_records(include_token=True, include_raw=False)
 
@@ -293,13 +295,13 @@ def _token_for_task(task_id: str) -> str | None:
     return ACCOUNT_POOL.token_for_hash(str(binding.get("token_hash") or ""))
 
 
-def _client_for_task(task_id: str) -> SousakuClient:
+def _client_for_task(task_id: str) -> HotgenClient:
     token = _token_for_task(task_id)
-    return create_sousaku_client(token=token) if token else create_sousaku_client()
+    return create_hotgen_client(token=token) if token else create_hotgen_client()
 
 
 def _refresh_account_record_for_token(token: str) -> dict[str, Any]:
-    client = create_sousaku_client(token=token)
+    client = create_hotgen_client(token=token)
     try:
         record = client.get_account_record(include_token=True, include_raw=False)
     except Exception as exc:
@@ -367,7 +369,7 @@ def _reference_images_to_temp_files(image_urls: list[Any]) -> list[str]:
                 suffix = image.suffix or _suffix_from_url(url)
                 content = image.data
 
-            handle = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, prefix=f"sousaku_ref_{idx}_")
+            handle = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, prefix=f"hotgen_ref_{idx}_")
             with handle:
                 handle.write(content)
             paths.append(handle.name)
@@ -384,7 +386,7 @@ def _safe_int(value: Any, *, default: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, parsed))
 
 
-def _safe_account_snapshot(client: SousakuClient) -> dict[str, Any] | None:
+def _safe_account_snapshot(client: HotgenClient) -> dict[str, Any] | None:
     try:
         profile = client.get_user_profile()
     except Exception:
@@ -392,7 +394,7 @@ def _safe_account_snapshot(client: SousakuClient) -> dict[str, Any] | None:
     return _account_snapshot_from_profile(client, profile)
 
 
-def _account_snapshot_from_profile(client: SousakuClient, profile: Any) -> dict[str, Any]:
+def _account_snapshot_from_profile(client: HotgenClient, profile: Any) -> dict[str, Any]:
     account_name = profile.user_email or profile.nick_name or profile.user_name or profile.user_id
     return {
         "account": account_name,
@@ -467,7 +469,7 @@ def _looks_like_insufficient_credit_error(exc: Exception) -> bool:
 
 def _image_filename(task_id: str, index: int, url: str) -> str:
     url_hash = hashlib.sha1(url.encode("utf-8")).hexdigest()[:12] if url else f"{index:02d}"
-    return f"sousaku_{task_id[:16]}_{url_hash}.{_suffix_from_url(url).lstrip('.') or 'png'}"
+    return f"hotgen_{task_id[:16]}_{url_hash}.{_suffix_from_url(url).lstrip('.') or 'png'}"
 
 
 def _suffix_from_content_type(content_type: str) -> str:
@@ -511,7 +513,7 @@ def _task_error_message(task: dict[str, Any]) -> str:
         return "; ".join(dict.fromkeys(failed_items))
     if task.get("is_nsfw_error"):
         return "content rejected by model compliance check"
-    return "Sousaku task failed"
+    return "Hotgen task failed"
 
 
 def _task_status_meta(task: dict[str, Any]) -> dict[str, Any]:

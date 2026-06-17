@@ -4,12 +4,13 @@ import type { ApiType } from '../store';
 
 export type ProviderId = ImageItem['apiType'] | ApiType | string;
 
-export const BUILTIN_API_ORDER = ['openai', 'cliproxy', 'sousaku', 'nanobanana2', 'apimart'];
+export const BUILTIN_API_ORDER = ['openai', 'cliproxy', 'sousaku', 'hotgen', 'nanobanana2', 'apimart'];
 
 export const FALLBACK_PROVIDER_LABELS: Record<string, string> = {
     openai: 'ChatGPT2API',
     cliproxy: 'CLIProxy',
     sousaku: 'Sousaku',
+    hotgen: 'Hotgen',
     nanobanana2: 'Nanobanana2',
     apimart: 'APIMart',
     other: 'Other',
@@ -21,6 +22,7 @@ const FALLBACK_BADGE_CLASS: Record<string, string> = {
     nanobanana2: 'bg-purple-500/20 text-purple-400',
     cliproxy: 'bg-red-500/20 text-red-400',
     sousaku: 'bg-cyan-500/20 text-cyan-400',
+    hotgen: 'bg-orange-500/20 text-orange-300',
     apimart: 'bg-blue-500/20 text-blue-400',
 };
 

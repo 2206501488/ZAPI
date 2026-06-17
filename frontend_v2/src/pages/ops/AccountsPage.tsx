@@ -20,7 +20,8 @@ const statusTone: Record<string, string> = {
     disabled: 'bg-[var(--account-status-disabled-bg)] text-[var(--account-status-disabled-text)] border-[var(--account-status-disabled-border)]',
 };
 
-const providers = ['sousaku', 'cliproxy', 'nanobanana2', 'apimart'];
+const providers = ['sousaku', 'hotgen', 'cliproxy', 'nanobanana2', 'apimart'];
+const tokenManagedProviders = new Set(['sousaku', 'hotgen']);
 
 function formatCredits(value: number) {
     return new Intl.NumberFormat('zh-CN').format(Math.round(value));
@@ -37,7 +38,7 @@ function accountPlanTags(account: ProviderAccount) {
     const metadataPlan = formatPlanLabel(account.metadata?.package_level);
     const tags = [metadataPlan, ...(account.tags || []).map(formatPlanLabel)]
         .filter(Boolean)
-        .filter((tag) => tag.toLowerCase() !== providerName && tag.toLowerCase() !== 'sousaku');
+        .filter((tag) => tag.toLowerCase() !== providerName && tag.toLowerCase() !== 'sousaku' && tag.toLowerCase() !== 'hotgen');
     return Array.from(new Set(tags)).slice(0, 1);
 }
 
@@ -64,11 +65,11 @@ export function AccountsPage() {
     };
 
     const handleAddTokens = async () => {
-        const tokens = window.prompt('粘贴 Sousaku token，多个 token 可用换行、逗号或分号分隔：');
+        const tokens = window.prompt(`粘贴 ${providerLabel(provider, runtimeProviders)} token，多个 token 可用换行、逗号或分号分隔：`);
         if (!tokens?.trim()) return;
         setAdding(true);
         try {
-            const response = await addSousakuTokens(tokens);
+            const response = await addSousakuTokens(tokens, provider);
             if (!response.success) {
                 window.alert(response.error?.message || '导入失败');
                 return;
@@ -88,7 +89,7 @@ export function AccountsPage() {
             `状态：${statusLabel[account.status] || account.status}`,
             `额度：${account.quota?.remaining ?? '-'} ${account.quota?.unit || ''}`,
             `邀请码：${shareCode || '-'}`,
-            shareCode ? `邀请链接：https://sousaku.ai/zh-CN/signin?share_code=${shareCode}` : '',
+            shareCode ? `邀请链接：${provider === 'hotgen' ? 'https://hotgen.ai' : 'https://sousaku.ai'}/zh-CN/signin?share_code=${shareCode}` : '',
             `Token：${meta.token_masked || '-'}`,
         ].filter(Boolean);
         try {
@@ -99,9 +100,9 @@ export function AccountsPage() {
     };
 
     const handleToggleAccount = async (account: ProviderAccount) => {
-        if (provider !== 'sousaku') return;
+        if (!tokenManagedProviders.has(provider)) return;
         const disabled = account.status !== 'disabled';
-        const response = await updateSousakuAccount(account.id, { disabled });
+        const response = await updateSousakuAccount(account.id, { disabled }, provider);
         if (!response.success) {
             window.alert(response.error?.message || '账号状态更新失败');
             return;
@@ -110,10 +111,10 @@ export function AccountsPage() {
     };
 
     const handleRefreshAccount = async (account: ProviderAccount) => {
-        if (provider !== 'sousaku') return;
+        if (!tokenManagedProviders.has(provider)) return;
         setRefreshingAccountId(account.id);
         try {
-            const response = await refreshSousakuAccount(account.id);
+            const response = await refreshSousakuAccount(account.id, provider);
             if (!response.success) {
                 window.alert(response.error?.message || '账号刷新失败');
                 return;
@@ -125,8 +126,8 @@ export function AccountsPage() {
     };
 
     const handleDeleteAccount = async (account: ProviderAccount) => {
-        if (provider !== 'sousaku') return;
-        const response = await deleteSousakuAccount(account.id);
+        if (!tokenManagedProviders.has(provider)) return;
+        const response = await deleteSousakuAccount(account.id, provider);
         if (!response.success) {
             window.alert(response.error?.message || '账号删除失败');
             return;
@@ -187,7 +188,7 @@ export function AccountsPage() {
                 </div>
                 <button
                     onClick={() => void handleAddTokens()}
-                    disabled={adding || provider !== 'sousaku'}
+                    disabled={adding || !tokenManagedProviders.has(provider)}
                     className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--accent-primary)] px-3 py-2 text-sm text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Plus className="h-4 w-4" />
@@ -195,7 +196,7 @@ export function AccountsPage() {
                 </button>
                 <button
                     onClick={() => void load({ refresh: true })}
-                    disabled={refreshing || provider !== 'sousaku'}
+                    disabled={refreshing || !tokenManagedProviders.has(provider)}
                     className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -294,7 +295,7 @@ export function AccountsPage() {
                                     <button
                                         className="rounded p-1.5 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                                         title="刷新此账号"
-                                        disabled={provider !== 'sousaku' || !!refreshingAccountId}
+                                        disabled={!tokenManagedProviders.has(provider) || !!refreshingAccountId}
                                         onClick={() => void handleRefreshAccount(account)}
                                     >
                                         <RefreshCw className={`h-4 w-4 ${refreshingAccountId === account.id ? 'animate-spin' : ''}`} />
@@ -309,7 +310,7 @@ export function AccountsPage() {
                                     <button
                                         className="rounded p-1.5 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                                         title={account.status === 'disabled' ? '启用账号' : '停用账号'}
-                                        disabled={provider !== 'sousaku'}
+                                        disabled={!tokenManagedProviders.has(provider)}
                                         onClick={() => void handleToggleAccount(account)}
                                     >
                                         {account.status === 'disabled' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
@@ -317,7 +318,7 @@ export function AccountsPage() {
                                     <button
                                         className="rounded p-1.5 hover:bg-[var(--bg-card-hover)] hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-40"
                                         title="删除账号"
-                                        disabled={provider !== 'sousaku'}
+                                        disabled={!tokenManagedProviders.has(provider)}
                                         onClick={() => void handleDeleteAccount(account)}
                                     >
                                         <Trash2 className="h-4 w-4" />

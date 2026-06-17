@@ -158,6 +158,13 @@ const DEFAULT_PER_API_PARAMS: Record<string, GenerateParams> = {
         sousakuAutoOptimize: true,
         imageCount: 1,
     },
+    hotgen: {
+        sousakuModel: 'gpt-image-2',
+        ratio: '1:1',
+        resolution: '4K',
+        sousakuAutoOptimize: true,
+        imageCount: 1,
+    },
 };
 
 const DEFAULT_SELECTED_MODELS: Record<string, string> = {
@@ -166,6 +173,7 @@ const DEFAULT_SELECTED_MODELS: Record<string, string> = {
     nanobanana2: 'gemini-3.1-flash-image',
     apimart: 'gemini-3-pro-image-preview',
     sousaku: 'gpt-image-2',
+    hotgen: 'gpt-image-2',
 };
 
 function pickSharedGenerateParams(params: Partial<GenerateParams>): Partial<GenerateParams> {
@@ -208,7 +216,7 @@ function mergeGenerateParams(
 function modelParamKey(api: ApiType): 'apimartModel' | 'cliproxyModel' | 'sousakuModel' | 'model' {
     if (api === 'apimart') return 'apimartModel';
     if (api === 'cliproxy') return 'cliproxyModel';
-    if (api === 'sousaku') return 'sousakuModel';
+    if (api === 'sousaku' || api === 'hotgen') return 'sousakuModel';
     return 'model';
 }
 
@@ -219,7 +227,7 @@ function buildModelSnapshot(api: ApiType, model: string, base?: Partial<Generate
     } as GenerateParams);
     if (api === 'apimart') snapshot.apimartModel = model;
     if (api === 'cliproxy') snapshot.cliproxyModel = model;
-    if (api === 'sousaku') snapshot.sousakuModel = model;
+    if (api === 'sousaku' || api === 'hotgen') snapshot.sousakuModel = model;
     return snapshot;
 }
 
@@ -689,6 +697,9 @@ export const useStore = create<AppState>()(
                 sousaku: {
                     [DEFAULT_SELECTED_MODELS.sousaku]: buildModelSnapshot('sousaku', DEFAULT_SELECTED_MODELS.sousaku),
                 },
+                hotgen: {
+                    [DEFAULT_SELECTED_MODELS.hotgen]: buildModelSnapshot('hotgen', DEFAULT_SELECTED_MODELS.hotgen),
+                },
             },
             setSelectedModel: (model) => set((state) => {
                 const api = state.selectedApi;
@@ -734,7 +745,7 @@ export const useStore = create<AppState>()(
                     });
                     if (api === 'apimart') nextSnapshot.apimartModel = model;
                     if (api === 'cliproxy') nextSnapshot.cliproxyModel = model;
-                    if (api === 'sousaku') nextSnapshot.sousakuModel = model;
+                    if (api === 'sousaku' || api === 'hotgen') nextSnapshot.sousakuModel = model;
                     return {
                         ...state.perApiModelParams,
                         [api]: {
@@ -754,7 +765,7 @@ export const useStore = create<AppState>()(
                     });
                     if (api === 'apimart') nextSnapshot.apimartModel = model;
                     if (api === 'cliproxy') nextSnapshot.cliproxyModel = model;
-                    if (api === 'sousaku') nextSnapshot.sousakuModel = model;
+                    if (api === 'sousaku' || api === 'hotgen') nextSnapshot.sousakuModel = model;
                     return {
                         ...state.perApiParams,
                         [api]: nextSnapshot,

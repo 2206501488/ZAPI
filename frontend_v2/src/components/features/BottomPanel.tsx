@@ -82,7 +82,7 @@ function providerDefaultModel(providers: RuntimeProvider[], providerId: string, 
 function modelParamKey(api: string): keyof GenerateParams {
     if (api === 'apimart') return 'apimartModel';
     if (api === 'cliproxy') return 'cliproxyModel';
-    if (api === 'sousaku') return 'sousakuModel';
+    if (api === 'sousaku' || api === 'hotgen') return 'sousakuModel';
     return 'model';
 }
 
@@ -93,6 +93,21 @@ function optionValue(option: ControlOption) {
 function optionLabel(option: ControlOption) {
     if (typeof option === 'object') return option.label || String(option.value);
     return String(option);
+}
+
+function sanitizeParamsForModel(params: GenerateParams, model: ModelOption | undefined): GenerateParams {
+    if (!model?.controls?.length) return params;
+    let next = params;
+    for (const control of model.controls) {
+        const key = control.key as keyof GenerateParams;
+        if (!control.options?.length || next[key] === undefined) continue;
+        const allowed = new Set(control.options.map((option) => String(optionValue(option))));
+        if (allowed.has(String(next[key]))) continue;
+        const fallback = model.defaults?.[control.key as keyof GenerateParams];
+        if (fallback === undefined || !allowed.has(String(fallback))) continue;
+        next = { ...next, [key]: fallback };
+    }
+    return next;
 }
 
 function parseControlValue(value: string, sample: ControlOption | undefined, control: ModelControl) {
@@ -183,6 +198,10 @@ export function BottomPanel() {
     );
     const sousakuModelOptions = useMemo(
         () => providerModelOptions(providers, 'sousaku', FALLBACK_SOUSAKU_MODELS),
+        [providers],
+    );
+    const hotgenModelOptions = useMemo(
+        () => providerModelOptions(providers, 'hotgen', FALLBACK_SOUSAKU_MODELS),
         [providers],
     );
     const apimartModelOptions = useMemo(
@@ -330,7 +349,7 @@ export function BottomPanel() {
             .filter((item): item is ReferenceImageInput => Boolean(item));
 
         const prompt = currentPrompt;
-        const params = { ...generateParams };
+        const params = sanitizeParamsForModel({ ...generateParams }, selectedModelConfig);
         const fixedImageCount = Number(selectedModelConfig?.constraints?.fixedImageCount || 0);
         const imageCount = fixedImageCount || Number(generateParams.imageCount || selectedModelConfig?.defaults?.imageCount || 1);
         if (fixedImageCount) {
@@ -454,6 +473,7 @@ export function BottomPanel() {
         if (selectedApi === 'openai') return openaiModelOptions;
         if (selectedApi === 'cliproxy') return cliproxyModelOptions;
         if (selectedApi === 'sousaku') return sousakuModelOptions;
+        if (selectedApi === 'hotgen') return hotgenModelOptions;
         if (selectedApi === 'nanobanana2') return nanobanana2ModelOptions;
         if (selectedApi === 'apimart') return apimartModelOptions;
         return providerModelOptions(providers, selectedApi, [{
@@ -467,7 +487,7 @@ export function BottomPanel() {
             ],
             features: { referenceImage: true, mask: true },
         }]);
-    }, [apimartModelOptions, cliproxyModelOptions, nanobanana2ModelOptions, openaiModelOptions, providers, selectedApi, selectedProvider, sousakuModelOptions]);
+    }, [apimartModelOptions, cliproxyModelOptions, hotgenModelOptions, nanobanana2ModelOptions, openaiModelOptions, providers, selectedApi, selectedProvider, sousakuModelOptions]);
     const selectedModelKey = modelParamKey(selectedApi);
     const selectedModelValue = String(
         selectedModelByApi[selectedApi] ||

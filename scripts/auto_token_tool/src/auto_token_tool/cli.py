@@ -84,8 +84,8 @@ def main(argv: list[str] | None = None) -> int:
 def load_tool_interactively() -> AutoTokenTool:
     config_path = find_default_config()
     if not config_path.exists():
-        raw = prompt_text("未找到 config.yaml，请输入配置文件路径，直接回车使用 examples/example.yaml: ")
-        config_path = Path(raw or "examples/example.yaml")
+        raw = prompt_text("未找到 config.yaml，请输入配置文件路径，直接回车使用 examples/sousaku.yaml: ")
+        config_path = Path(raw or "examples/sousaku.yaml")
     config = AppConfig.from_file(config_path)
     return AutoTokenTool(config)
 

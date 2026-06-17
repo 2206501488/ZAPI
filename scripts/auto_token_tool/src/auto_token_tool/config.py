@@ -11,9 +11,12 @@ from .yamlio import load_yaml_mapping
 @dataclass
 class ServiceConfig:
     name: str = "sousaku"
+    provider_id: str = "sousaku"
     signin_base_url: str = "https://sousaku.ai/zh-CN/signin"
     app_base_url: str = "https://sousaku.ai/zh-CN"
     api_base_url: str = "https://api.sousaku.ai"
+    cookie_domain: str = ".sousaku.ai"
+    shared_storage_key: str = "Sousaku_Shared"
     version_header: str = "2.0.0"
     default_share_code: str = ""
 
@@ -25,7 +28,7 @@ class BrowserConfig:
     keep_open: bool = True
     captcha_wait_seconds: int = 120
     token_wait_seconds: int = 180
-    profile_root: str = "runtime/browser-profiles"
+    profile_root: str = "runtime/browser-profiles/sousaku"
 
 
 @dataclass
@@ -37,13 +40,13 @@ class VerificationConfig:
     poll_interval_seconds: int = 5
     max_code_attempts: int = 3
     proxy: str = "http://127.0.0.1:7890"
-    outlook_cards_path: str = "data/outlook_cards.txt"
+    outlook_cards_path: str = "data/sousaku/outlook_cards.txt"
 
 
 @dataclass
 class AccountConfig:
-    path: str = "data/accounts.yaml"
-    tokens_path: str = "data/tokens.yaml"
+    path: str = "data/sousaku/accounts.yaml"
+    tokens_path: str = "data/sousaku/tokens.yaml"
 
 
 @dataclass
@@ -71,7 +74,7 @@ class GenerationConfig:
     enabled: bool = False
     wait_for_result: bool = True
     publish_after_success: bool = True
-    save_dir: str = "data/generated"
+    save_dir: str = "data/sousaku/generated"
     generation_timeout: int = 1200
     poll_interval_seconds: int = 3
     tasks: list[dict[str, Any]] = field(default_factory=list)
@@ -140,6 +143,10 @@ class AppConfig:
         self.config_path.write_text(new_content, encoding="utf-8")
 
     def validate(self) -> None:
+        provider_id = self.service.provider_id.strip().lower()
+        if provider_id not in {"sousaku", "hotgen"}:
+            raise ConfigError("service.provider_id must be one of: sousaku, hotgen")
+        self.service.provider_id = provider_id
         if self.verification.source not in {"manual", "fixed", "gmail_script", "microsoft_graph"}:
             raise ConfigError("verification.source must be one of: manual, fixed, gmail_script, microsoft_graph")
         if self.registration.email_alias_mode not in {"none", "gmail_dot", "list"}:

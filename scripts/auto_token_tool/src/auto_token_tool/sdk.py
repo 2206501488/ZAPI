@@ -19,7 +19,11 @@ class AutoTokenTool:
             config.resolve(config.accounts.tokens_path),
         )
         self.service = SousakuServiceClient(config.service)
-        self.verifier = build_verification_provider(config.verification, root_dir=config.root_dir)
+        self.verifier = build_verification_provider(
+            config.verification,
+            root_dir=config.root_dir,
+            provider_id=config.service.provider_id,
+        )
         self.login_workflow = LoginWorkflow(config, self.store, self.service, self.verifier)
         self.chain_workflow = ChainWorkflow(
             self.store,

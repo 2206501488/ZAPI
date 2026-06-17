@@ -240,7 +240,8 @@ class ChainWorkflow:
         if not config_path and not server_port_path:
             return False
         port = self._proxycanvas_port()
-        url = f"http://localhost:{port}/api/provider-accounts/sousaku/tokens"
+        provider_id = self.config.service.provider_id.strip().lower()
+        url = f"http://localhost:{port}/api/provider-accounts/{provider_id}/tokens"
         try:
             response = requests.post(url, json={"tokens": [token]}, timeout=5)
             if response.status_code != 200:

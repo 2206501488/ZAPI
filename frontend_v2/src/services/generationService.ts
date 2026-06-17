@@ -39,6 +39,26 @@ type ProviderPayload = Record<string, unknown> & {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function optionValue(option: string | number | boolean | { value: string | number | boolean; label?: string }) {
+    return typeof option === 'object' ? option.value : option;
+}
+
+function sanitizeParamsForModel(params: GenerateParams, modelConfig?: GenerationRequest['modelConfig']): GenerateParams {
+    if (!modelConfig?.controls?.length) return params;
+    let next = params;
+    for (const control of modelConfig.controls) {
+        const key = control.key as keyof GenerateParams;
+        if (!control.options?.length || next[key] === undefined) continue;
+        const allowed = new Set(control.options.map((option) => String(optionValue(option))));
+        const current = String(next[key]);
+        if (allowed.has(current)) continue;
+        const fallback = modelConfig.defaults?.[control.key];
+        if (fallback === undefined || !allowed.has(String(fallback))) continue;
+        next = { ...next, [key]: fallback };
+    }
+    return next;
+}
+
 function imageCountFor(request: GenerationRequest) {
     const fixedCount = Number(request.modelConfig?.constraints?.fixedImageCount || 0);
     return Math.max(1, fixedCount || request.placeholderIds.length || request.params.imageCount || Number(request.modelConfig?.defaults?.imageCount || 1) || 1);
@@ -52,12 +72,13 @@ function modelValueFor(provider: string, params: GenerateParams, modelConfig?: G
     if (modelConfig?.value) return modelConfig.value;
     if (provider === 'apimart') return params.apimartModel || 'gemini-3-pro-image-preview';
     if (provider === 'cliproxy') return params.cliproxyModel || 'gpt-image-2';
-    if (provider === 'sousaku') return params.sousakuModel || 'gpt-image-2';
+    if (provider === 'sousaku' || provider === 'hotgen') return params.sousakuModel || 'gpt-image-2';
     return params.model || modelConfig?.value || '';
 }
 
 function buildProviderRequest(request: GenerationRequest): { provider: string; payload: ProviderPayload } {
-    const { prompt, apiType, params, modelConfig, imageUrls, maskDataUrl, maskFeather } = request;
+    const { prompt, apiType, modelConfig, imageUrls, maskDataUrl, maskFeather } = request;
+    const params = sanitizeParamsForModel(request.params, modelConfig);
     const provider = resolveProvider(apiType);
     const n = imageCountFor(request);
     const model = modelValueFor(provider, params, modelConfig);

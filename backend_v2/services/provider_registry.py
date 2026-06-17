@@ -10,7 +10,7 @@ import config
 
 ProviderChangeListener = Callable[[], None]
 
-_BUILTIN_ORDER = ["openai", "cliproxy", "sousaku", "nanobanana2", "apimart"]
+_BUILTIN_ORDER = ["openai", "cliproxy", "sousaku", "hotgen", "nanobanana2", "apimart"]
 _LISTENERS: list[ProviderChangeListener] = []
 _LOCK = threading.RLock()
 
@@ -238,7 +238,7 @@ def delete_provider(provider_id: str) -> None:
 
 
 def build_job_adapters(*, app: Any, endpoints: dict[str, Any], logger=None) -> dict[str, Any]:
-    from services.jobs.providers import APIMartAdapter, FlaskEndpointAdapter, OpenAICompatibleImageAdapter, OpenAITaskAdapter, SousakuAdapter
+    from services.jobs.providers import APIMartAdapter, FlaskEndpointAdapter, HotgenAdapter, OpenAICompatibleImageAdapter, OpenAITaskAdapter, SousakuAdapter
 
     adapters: dict[str, Any] = {}
     for provider in list_providers(include_disabled=False):
@@ -246,6 +246,8 @@ def build_job_adapters(*, app: Any, endpoints: dict[str, Any], logger=None) -> d
         provider_type = provider.get("type")
         if provider_type == "sousaku":
             adapters[provider_id] = SousakuAdapter(logger=logger)
+        elif provider_type == "hotgen":
+            adapters[provider_id] = HotgenAdapter(logger=logger)
         elif provider_type == "openai-compatible" and provider_id not in {"openai", "cliproxy"}:
             adapters[provider_id] = OpenAICompatibleImageAdapter(provider_id, provider)
         elif provider_id == "cliproxy":

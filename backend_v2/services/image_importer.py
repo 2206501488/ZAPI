@@ -140,5 +140,5 @@ def _resolution_label(width: int | None, height: int | None) -> str:
 
 
 def _normalize_api_type(value: str) -> str:
-    allowed = {"apimart", "openai", "nanobanana2", "cliproxy", "sousaku", "other"}
+    allowed = {"apimart", "openai", "nanobanana2", "cliproxy", "sousaku", "hotgen", "other"}
     return value if value in allowed else "other"

@@ -17,6 +17,7 @@ from .models import SousakuImage, SousakuModelConfig, SousakuTask, SousakuUserPr
 
 
 DEFAULT_BASE_URL = "https://api.sousaku.ai"
+DEFAULT_SITE_URL = "https://sousaku.ai"
 DEFAULT_MODEL = "gpt-image-2"
 DEFAULT_CONFIG_PATH = "sousaku_config.json"
 MODEL_ALIASES = {
@@ -68,12 +69,12 @@ DEFAULT_MODEL_CONFIGS = {
     "gpt-image-2": SousakuModelConfig(
         model="gpt-image-2",
         label="GPT Image 2.0 Medium",
-        credits_per_image=4,
+        credits_per_image=8,
     ),
     "gpt-image-2-high": SousakuModelConfig(
         model="gpt-image-2-high",
         label="GPT Image 2.0 High",
-        credits_per_image=13,
+        credits_per_image=26,
     ),
     "seedream-4.5": SousakuModelConfig(
         model="seedream-4.5",
@@ -115,6 +116,11 @@ IMAGE_MODEL_DEFAULT_RESOLUTIONS = {
     "seedream-4.5": "2k",
     "wan-image-2.7-pro": "4k",
 }
+IMAGE_MODEL_CREDITS_BY_RESOLUTION = {
+    "gpt-image-2-low": {"2k": 2, "4k": 4},
+    "gpt-image-2": {"2k": 6, "4k": 8},
+    "gpt-image-2-high": {"2k": 16, "4k": 26},
+}
 IMAGE_MODELS_FIXED_NUMBER = {
     "mj-image-v7",
     "mj-image-niji-7",
@@ -127,6 +133,7 @@ class SousakuClient:
         tokens: str | Iterable[str] | None = None,
         *,
         base_url: str = DEFAULT_BASE_URL,
+        site_url: str = DEFAULT_SITE_URL,
         timeout: int = 30,
         retry_total: int = 3,
         auto_rotate_token: bool = True,
@@ -144,6 +151,7 @@ class SousakuClient:
             raise ValueError("Sousaku token is required. Pass tokens=... or set SOUSAKU_TOKEN.")
 
         self.base_url = base_url.rstrip("/")
+        self.site_url = site_url.rstrip("/")
         self.timeout = timeout
         self.auto_rotate_token = auto_rotate_token
         self.save_dir = save_dir
@@ -185,6 +193,7 @@ class SousakuClient:
         merged = {
             "tokens": active_tokens,
             "base_url": config.get("base_url", DEFAULT_BASE_URL),
+            "site_url": config.get("site_url", DEFAULT_SITE_URL),
             "timeout": config.get("timeout", 30),
             "retry_total": config.get("retry_total", 3),
             "auto_rotate_token": config.get("auto_rotate_token", True),
@@ -256,8 +265,8 @@ class SousakuClient:
             "accept-language": "zh-CN,zh;q=0.9",
             "authorization": self.token,
             "cookie": f"pp_user_token={self.token}",
-            "origin": "https://sousaku.ai",
-            "referer": "https://sousaku.ai/",
+            "origin": self.site_url,
+            "referer": f"{self.site_url}/",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "x-sousaku-version": "2.0.0",
         }
@@ -379,7 +388,7 @@ class SousakuClient:
                 "auto_optimize": auto_optimize,
             },
             "number": number,
-            "credits": credits if credits is not None else self.estimate_credits(model, number),
+            "credits": credits if credits is not None else self.estimate_credits(model, number, resolution=resolution),
             "model": model,
         }
         if extra_payload:
@@ -840,11 +849,20 @@ class SousakuClient:
     def normalize_model(model: str) -> str:
         return MODEL_ALIASES.get(model.strip().lower(), model)
 
-    def estimate_credits(self, model: str, number: int = 1) -> int:
+    def estimate_credits(self, model: str, number: int = 1, *, resolution: str | None = None) -> int:
         model = self.normalize_model(model)
+        resolution_key = self._resolution_key(resolution or IMAGE_MODEL_DEFAULT_RESOLUTIONS.get(model))
+        resolution_prices = IMAGE_MODEL_CREDITS_BY_RESOLUTION.get(model)
+        if resolution_prices and resolution_key in resolution_prices:
+            return resolution_prices[resolution_key] * number
         config = self.model_configs.get(model)
         per_image = config.credits_per_image if config else 4
         return per_image * number
+
+    @staticmethod
+    def _resolution_key(value: str | None) -> str:
+        normalized = str(value or "").strip().lower()
+        return normalized if normalized in {"1k", "2k", "4k"} else ""
 
     def set_model_config(self, model: str, credits_per_image: int, label: str | None = None) -> None:
         model = self.normalize_model(model)

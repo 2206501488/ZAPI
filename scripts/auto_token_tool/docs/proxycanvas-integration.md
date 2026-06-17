@@ -42,12 +42,18 @@ Keep runtime files outside git:
 
 ```text
 scripts/auto_token_tool/
-  examples/example.yaml
+  examples/sousaku.yaml
+  examples/hotgen.yaml
   config.yaml          # local only
-  data/accounts.yaml   # local only
-  data/tokens.yaml     # local only
-  runtime/             # local only
+  data/sousaku/        # local only, Sousaku accounts/tokens/cards/generated
+  data/hotgen/         # local only, Hotgen accounts/tokens/cards/generated
+  runtime/browser-profiles/sousaku/  # local only, Sousaku browser profiles
+  runtime/browser-profiles/hotgen/   # local only, Hotgen browser profiles
 ```
+
+Set `service.provider_id` to choose the ProxyCanvas token sync target. `sousaku`
+posts to `/api/provider-accounts/sousaku/tokens`; `hotgen` posts to
+`/api/provider-accounts/hotgen/tokens`.
 
 ## Contract For ProxyCanvas
 
