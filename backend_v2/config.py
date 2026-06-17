@@ -272,10 +272,10 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                 {
                     "value": "gpt-image-2-low",
                     "label": "GPT Image 2.0 Low",
-                    "defaults": {"ratio": "1:1", "resolution": "4k", "sousakuAutoOptimize": True, "imageCount": 1},
+                    "defaults": {"ratio": "1:1", "resolution": "4K", "sousakuAutoOptimize": True, "imageCount": 1},
                     "controls": [
                         {"key": "ratio", "label": "比例", "type": "select", "options": SOUSAKU_GPT_WAN_RATIOS},
-                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2k", "label": "2K"}, {"value": "4k", "label": "4K"}]},
+                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2K", "label": "2K"}, {"value": "4K", "label": "4K"}]},
                         {"key": "sousakuAutoOptimize", "label": "自动优化", "type": "boolean"},
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4]},
                     ],
@@ -285,10 +285,10 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                 {
                     "value": "gpt-image-2",
                     "label": "GPT Image 2.0 Medium",
-                    "defaults": {"ratio": "1:1", "resolution": "4k", "sousakuAutoOptimize": True, "imageCount": 1},
+                    "defaults": {"ratio": "1:1", "resolution": "4K", "sousakuAutoOptimize": True, "imageCount": 1},
                     "controls": [
                         {"key": "ratio", "label": "比例", "type": "select", "options": SOUSAKU_GPT_WAN_RATIOS},
-                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2k", "label": "2K"}, {"value": "4k", "label": "4K"}]},
+                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2K", "label": "2K"}, {"value": "4K", "label": "4K"}]},
                         {"key": "sousakuAutoOptimize", "label": "自动优化", "type": "boolean"},
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4]},
                     ],
@@ -298,10 +298,10 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                 {
                     "value": "gpt-image-2-high",
                     "label": "GPT Image 2.0 High",
-                    "defaults": {"ratio": "1:1", "resolution": "4k", "sousakuAutoOptimize": True, "imageCount": 1},
+                    "defaults": {"ratio": "1:1", "resolution": "4K", "sousakuAutoOptimize": True, "imageCount": 1},
                     "controls": [
                         {"key": "ratio", "label": "比例", "type": "select", "options": SOUSAKU_GPT_WAN_RATIOS},
-                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2k", "label": "2K"}, {"value": "4k", "label": "4K"}]},
+                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2K", "label": "2K"}, {"value": "4K", "label": "4K"}]},
                         {"key": "sousakuAutoOptimize", "label": "自动优化", "type": "boolean"},
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4]},
                     ],
@@ -311,10 +311,10 @@ DEFAULT_PROVIDERS_SETTINGS: dict[str, Any] = {
                 {
                     "value": "wan-image-2.7-pro",
                     "label": "WAN Image 2.7 Pro",
-                    "defaults": {"ratio": "1:1", "resolution": "4k", "sousakuAutoOptimize": True, "imageCount": 1},
+                    "defaults": {"ratio": "1:1", "resolution": "4K", "sousakuAutoOptimize": True, "imageCount": 1},
                     "controls": [
                         {"key": "ratio", "label": "比例", "type": "select", "options": SOUSAKU_GPT_WAN_RATIOS},
-                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2k", "label": "2K"}, {"value": "4k", "label": "4K"}]},
+                        {"key": "resolution", "label": "分辨率", "type": "select", "options": [{"value": "2K", "label": "2K"}, {"value": "4K", "label": "4K"}]},
                         {"key": "sousakuAutoOptimize", "label": "自动优化", "type": "boolean"},
                         {"key": "imageCount", "label": "数量", "type": "select", "options": [1, 2, 3, 4]},
                     ],

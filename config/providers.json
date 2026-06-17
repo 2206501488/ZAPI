@@ -1111,6 +1111,397 @@
       "stream": false,
       "timeoutSeconds": 1200,
       "badgeColor": "#8ecae6"
+    },
+    "hotgen": {
+      "label": "Hotgen",
+      "type": "hotgen",
+      "enabled": true,
+      "baseUrl": "",
+      "apiKey": "",
+      "defaultModel": "gpt-image-2",
+      "configPath": "config/hotgen_config.json",
+      "models": [
+        {
+          "value": "gpt-image-2-low",
+          "label": "GPT Image 2.0 Low",
+          "defaults": {
+            "ratio": "1:1",
+            "resolution": "4K",
+            "sousakuAutoOptimize": true,
+            "imageCount": 1
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16",
+                "21:9"
+              ]
+            },
+            {
+              "key": "resolution",
+              "label": "分辨率",
+              "type": "select",
+              "options": [
+                {
+                  "value": "2K",
+                  "label": "2K"
+                },
+                {
+                  "value": "4K",
+                  "label": "4K"
+                }
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "resolution": "resolution",
+            "count": "n"
+          },
+          "constraints": {}
+        },
+        {
+          "value": "gpt-image-2",
+          "label": "GPT Image 2.0 Medium",
+          "defaults": {
+            "ratio": "1:1",
+            "resolution": "4K",
+            "sousakuAutoOptimize": true,
+            "imageCount": 1
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16",
+                "21:9"
+              ]
+            },
+            {
+              "key": "resolution",
+              "label": "分辨率",
+              "type": "select",
+              "options": [
+                {
+                  "value": "2K",
+                  "label": "2K"
+                },
+                {
+                  "value": "4K",
+                  "label": "4K"
+                }
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "resolution": "resolution",
+            "count": "n"
+          },
+          "constraints": {}
+        },
+        {
+          "value": "gpt-image-2-high",
+          "label": "GPT Image 2.0 High",
+          "defaults": {
+            "ratio": "1:1",
+            "resolution": "4K",
+            "sousakuAutoOptimize": true,
+            "imageCount": 1
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16",
+                "21:9"
+              ]
+            },
+            {
+              "key": "resolution",
+              "label": "分辨率",
+              "type": "select",
+              "options": [
+                {
+                  "value": "2K",
+                  "label": "2K"
+                },
+                {
+                  "value": "4K",
+                  "label": "4K"
+                }
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "resolution": "resolution",
+            "count": "n"
+          },
+          "constraints": {}
+        },
+        {
+          "value": "wan-image-2.7-pro",
+          "label": "WAN Image 2.7 Pro",
+          "defaults": {
+            "ratio": "1:1",
+            "resolution": "4K",
+            "sousakuAutoOptimize": true,
+            "imageCount": 1
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16",
+                "21:9"
+              ]
+            },
+            {
+              "key": "resolution",
+              "label": "分辨率",
+              "type": "select",
+              "options": [
+                {
+                  "value": "2K",
+                  "label": "2K"
+                },
+                {
+                  "value": "4K",
+                  "label": "4K"
+                }
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "resolution": "resolution",
+            "count": "n"
+          },
+          "constraints": {}
+        },
+        {
+          "value": "mj-image-v7",
+          "label": "Midjourney V7",
+          "defaults": {
+            "ratio": "1:1",
+            "sousakuAutoOptimize": true,
+            "imageCount": 4
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16"
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                4
+              ]
+            }
+          ],
+          "constraints": {
+            "fixedImageCount": 4
+          },
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "count": "n"
+          }
+        },
+        {
+          "value": "mj-image-niji-7",
+          "label": "Midjourney Niji 7",
+          "defaults": {
+            "ratio": "1:1",
+            "sousakuAutoOptimize": true,
+            "imageCount": 4
+          },
+          "controls": [
+            {
+              "key": "ratio",
+              "label": "比例",
+              "type": "select",
+              "options": [
+                "1:1",
+                "4:3",
+                "3:4",
+                "3:2",
+                "2:3",
+                "16:9",
+                "9:16"
+              ]
+            },
+            {
+              "key": "sousakuAutoOptimize",
+              "label": "自动优化",
+              "type": "boolean"
+            },
+            {
+              "key": "imageCount",
+              "label": "数量",
+              "type": "select",
+              "options": [
+                4
+              ]
+            }
+          ],
+          "constraints": {
+            "fixedImageCount": 4
+          },
+          "features": {
+            "referenceImage": true,
+            "mask": false
+          },
+          "payload": {
+            "size": "ratio",
+            "count": "n"
+          }
+        }
+      ],
+      "capabilities": [
+        "text-to-image",
+        "account-pool",
+        "credit-estimate"
+      ],
+      "notes": "通过本地 Hotgen 适配器提交生图任务。",
+      "protocol": "images",
+      "stream": false,
+      "timeoutSeconds": 1200,
+      "badgeColor": "#f97316"
     }
   }
 }
