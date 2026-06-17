@@ -7,7 +7,7 @@ echo Press Ctrl+C to stop.
 echo.
 
 :loop
-python -B -m auto_token_tool.cli chain
+python -B -m auto_token_tool.cli chain --no-open-final-browser
 if errorlevel 1 goto failed
 
 echo.

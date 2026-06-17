@@ -14,7 +14,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("login", help="Run one browser-assisted login.")
-    sub.add_parser("chain", help="Run chain login flow.")
+    chain_parser = sub.add_parser("chain", help="Run chain login flow.")
+    chain_parser.add_argument(
+        "--no-open-final-browser",
+        action="store_true",
+        help="Do not keep the final Plus account browser open after a successful chain run.",
+    )
     sub.add_parser("accounts", help="List stored accounts.")
     sub.add_parser("webui", help="Start local account status WebUI.")
     return parser
@@ -44,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if command == "chain":
+        if getattr(args, "no_open_final_browser", False):
+            tool.config.chain.open_final_plus_browser = False
         result = tool.chain_login(bootstrap_if_needed=True)
         if not result.success:
             print(result.error, file=sys.stderr)
